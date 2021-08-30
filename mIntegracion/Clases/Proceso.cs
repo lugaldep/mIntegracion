@@ -7,6 +7,7 @@ using System.Data;
 using System.Collections;
 using System.Configuration;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 
 namespace mIntegracion.Clases
 {
@@ -18,6 +19,44 @@ namespace mIntegracion.Clases
         {
             this.sqlClass = _sqlClass;
         }
+
+        /// <summary>
+        /// Metodo convert un dt to Json  
+        /// </summary>
+        public string DataTableToJsonWithJsonNet(DataTable table)
+        {
+            string jsonString = string.Empty;
+            jsonString = JsonConvert.SerializeObject(table);
+            return jsonString;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         /// <summary>
