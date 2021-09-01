@@ -35,9 +35,15 @@
   <PropertyGroup>
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>tikosoft.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="mAuthLic">
       <HintPath>..\..\..\..\TikoSoft\FUENTES\mAuthLic\mAuthLic\bin\Release\mAuthLic.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -67,6 +73,7 @@
     <Compile Include="Clases\F1.cs" />
     <Compile Include="Clases\Globales.cs" />
     <Compile Include="Clases\Inventarios.cs" />
+    <Compile Include="Clases\jsonHandler.cs" />
     <Compile Include="Clases\Proceso.cs" />
     <Compile Include="Clases\Seguridad.cs" />
     <Compile Include="Clases\SQL.cs" />
@@ -104,6 +111,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="tikosoft.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -7,7 +7,8 @@ using System.Data;
 using System.Collections;
 using System.Configuration;
 using System.Windows.Forms;
-using Newtonsoft.Json;
+using RestSharp;
+
 
 namespace mIntegracion.Clases
 {
@@ -20,15 +21,449 @@ namespace mIntegracion.Clases
             this.sqlClass = _sqlClass;
         }
 
-        /// <summary>
-        /// Metodo convert un dt to Json  
-        /// </summary>
-        public string DataTableToJsonWithJsonNet(DataTable table)
+        public string EstadoCodigo(string estado)
         {
-            string jsonString = string.Empty;
-            jsonString = JsonConvert.SerializeObject(table);
-            return jsonString;
+            switch (estado)
+            {
+                case "Sincronizado":
+                    return ("S");
+                case "Error":
+                    return ("E");
+                case "Pendiente":
+                    return ("P");
+
+                default:
+                    return ("P");
+            }
         }
+        /*
+            Compañías
+            Proveedores
+            Ordenes de compra
+            Solicitudes de pago
+            Pagos
+        */
+        
+        public string TipoCodigoBIT(string tipo)
+        {
+            switch (tipo)
+            {
+                case "Compañías":
+                    return ("C");
+                case "Proveedores":
+                    return ("P");
+                case "Ordenes de compra":
+                    return ("OC");
+                case "Solicitudes de pago":
+                    return ("SP");
+                case "Pagos":
+                    return ("P");
+                default:
+                    return ("C");
+            }
+        }
+
+        /// <summary>
+        /// Metodo encargado de extraer cias      
+        /// </summary>
+        public DataTable getIntGlobales()
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select BODEGA, PAIS, SERVICE, CONSUMER_KEY, CONSUMER_SECRET ");           
+            sentencia.Append("from  ");
+            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(".INT_GLOBALES ");            
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString());
+
+            return dt;
+        }
+
+        /// <summary>
+        /// Actualizar 
+        /// </summary>
+        public bool updIntConjunto(SqlTransaction transac, string conjunto, string indProc, string mensaje, ref StringBuilder errores)
+        {
+            bool lbOk = true;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("UPDATE ");
+                sentencia.Append(sqlClass.Compannia);
+                sentencia.Append(".INT_CONJUNTO ");
+                sentencia.Append("SET IND_PROCESO = '" + indProc + "'");
+                sentencia.Append(", MENSAJE = '" + mensaje + "'");
+                sentencia.Append(" WHERE CONJUNTO = '");
+                sentencia.Append(conjunto);
+                sentencia.Append("'");
+
+                if (sqlClass.EjecutarUpdate(sentencia.ToString(), transac) < 1)
+                {
+                    errores.AppendLine("[updIntConjunto]: Se presentaron problemas actualizando el conjunto en la tabla intermedia: ");
+                    errores.Append(conjunto);
+                    lbOk = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[updIntConjunto]: Detalle Técnico: " + e.Message);
+                lbOk = false;
+            }
+            return lbOk;
+        }
+
+
+
+        /// <summary>
+        /// Metodo encargado de extraer cias      
+        /// </summary>
+        public DataTable getCompaniasSync(SqlTransaction transac)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select ");
+            sentencia.Append("NOMBRE nombre ");
+            sentencia.Append(",TELEFONO telefono ");
+            sentencia.Append(",NIT nit ");
+            sentencia.Append(",CONJUNTO codigo ");            
+            sentencia.Append(",isnull(LOGO, 'sinLogo') imagnombre  ");
+            sentencia.Append("from  ");
+            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(".INT_CONJUNTO ");
+            sentencia.Append("where IND_PROCESO = 'P' ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// Metodo encargado de extraer proveedores      
+        /// </summary>
+        public DataTable getProveedoresSync(SqlTransaction transac)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select ");
+            sentencia.Append(" i.NOMBRE nombreproveedor ");
+            sentencia.Append(",i.CONTRIBUYENTE cedulajuridica ");
+            sentencia.Append(",case i.ACTIVO when 'S' then 1 else 0 end activo ");
+            sentencia.Append(",cast(p.DIRECCION as varchar(50)) direccion ");
+            sentencia.Append(",i.CONTACTO contacto ");
+            sentencia.Append(",i.TELEFONO1 telefono ");
+            sentencia.Append(",i.E_MAIL correo ");
+            sentencia.Append(",i.PROVEEDOR codigoproveedor ");
+            sentencia.Append("from  ");
+            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(".INT_PROVEEDOR i inner join ");
+            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(".PROVEEDOR p on i.PROVEEDOR = p.PROVEEDOR ");
+            sentencia.Append("where i.IND_PROCESO = 'P' ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+        /// <summary>
+        /// Actualizar 
+        /// </summary>
+        public bool updIntProveedor(SqlTransaction transac, string prov, string indProc, string mensaje, ref StringBuilder errores)
+        {
+            bool lbOk = true;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("UPDATE ");
+                sentencia.Append(sqlClass.Compannia);
+                sentencia.Append(".INT_PROVEEDOR ");
+                sentencia.Append("SET IND_PROCESO = '" + indProc + "'");
+                sentencia.Append(", MENSAJE = '" + mensaje + "'");
+                sentencia.Append(" WHERE PROVEEDOR = '");
+                sentencia.Append(prov);
+                sentencia.Append("'");
+
+                if (sqlClass.EjecutarUpdate(sentencia.ToString(), transac) < 1)
+                {
+                    errores.AppendLine("[updIntProveedor]: Se presentaron problemas actualizando el proveedor en la tabla intermedia: ");
+                    errores.Append(prov);
+                    lbOk = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[updIntProveedor]: Detalle Técnico: " + e.Message);
+                lbOk = false;
+            }
+            return lbOk;
+        }
+
+        /// <summary>
+        /// Obtener listado de cotizaciones      
+        /// </summary>
+        public DataTable getBitacora(string estado, string tipo, DateTime fcInicio, DateTime fcFin)
+        {
+            string tipoCod = TipoCodigoBIT(tipo);
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select ");
+            //cia
+            if(tipoCod.CompareTo("C")==0)
+                sentencia.Append("CONJUNTO Compañía,NOMBRE Nombre, ");
+            else if (tipoCod.CompareTo("P") == 0)
+                //prov
+                sentencia.Append("PROVEEDOR Proveedor, NOMBRE Nombre, ");
+            else if (tipoCod.CompareTo("OC") == 0)
+                //oc
+                sentencia.Append("CONJUNTO Compañía, ORDEN_COMPRA Orden_Compra, ORDEN_SERVICIO Orden_Servicio, PROVEEDOR Proveedor, ");
+
+            //solicitud pagos
+             /**/
+            //pagos     
+            /**/
+            sentencia.Append("FCH_PROCESO Fecha, ");
+            sentencia.Append("case IND_PROCESO when 'P' then 'Pendiente' ");
+            sentencia.Append("when 'E' then 'Error' when 'S' then 'Sincronizado' ");
+            sentencia.Append("end Estado, ");
+            sentencia.Append("MENSAJE Mensaje ");            
+            sentencia.Append("from ");
+
+            sentencia.Append(sqlClass.Compannia);
+           
+            if (tipoCod.CompareTo("C") == 0)
+                //cia
+                sentencia.Append(".INT_CONJUNTO ");
+            else if (tipoCod.CompareTo("P") == 0)
+                //prov
+                sentencia.Append(".INT_PROVEEDOR ");
+            else if (tipoCod.CompareTo("OC") == 0)
+                //oc
+                sentencia.Append(".INT_ORDEN_COMPRA ");
+
+            //solicitud pagos
+
+            //pagos   
+
+
+            sentencia.Append("where FCH_PROCESO is not null");
+
+            if (estado.CompareTo(string.Empty) != 0)
+            {
+                sentencia.Append(" and IND_PROCESO = '");
+                sentencia.Append(EstadoCodigo(estado));
+                sentencia.Append("' ");
+            }
+
+            //if (tipo.CompareTo(string.Empty) != 0)
+            //{
+            //    sentencia.Append(" and TIPO = '");
+            //    sentencia.Append(tipoCod);
+            //    sentencia.Append("' ");
+            //}
+
+            if ((fcInicio.ToString("yyyy").CompareTo("0001") != 0) && (fcFin.ToString("yyyy").CompareTo("0001") != 0))
+            {
+                sentencia.Append(" and FCH_PROCESO between '");
+                sentencia.Append(fcInicio.ToString("yyyy-MM-dd"));
+                sentencia.Append("' and '");
+                sentencia.Append(fcFin.ToString("yyyy-MM-dd"));
+                sentencia.Append("' ");
+            }
+
+            sentencia.Append(" order by FCH_PROCESO desc ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString());
+
+            return dt;
+        }
+
+
+
+        /// <summary>
+        /// Metodo que sincroniza las companias
+        /// </summary>
+        public bool syncProveedores(string url, string ck, string cs, ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            DataTable dtProv = null;
+            StringBuilder json = new StringBuilder();
+            jsonHandler j = new jsonHandler();
+            int p = 0;
+
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener companias a sync
+                dtProv = getProveedoresSync(transaction);
+
+                while (p < dtProv.Rows.Count)
+                {
+                    //obtener encabezado
+                    json.Append(j.getHeader(ck, cs, "proveedor"));
+
+                    //obtener json de la cia
+                    json.Append(j.DataRowToJson(dtProv, p));
+
+                    //obtener footer
+                    json.Append(j.getFooter());
+
+                    //sync
+                    var client = new RestClient(url);
+                    var request = new RestRequest(Method.POST);
+                    request.AddParameter("application/json", json.ToString(), ParameterType.RequestBody);
+                    IRestResponse response = client.Execute(request);
+
+                    //revisar respuesta
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+
+                    }
+                    else
+                    {
+                        updIntConjunto(transaction, dtProv.Rows[p]["codigo"].ToString(), "E", response.Content, ref error);
+                    }
+
+                    //sgt cia - limpiar variables
+                    p++;
+                    json.Clear();
+                }
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[syncProveedores]: Se presentaron problemas sincronizando proveedores:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+
+
+        /// <summary>
+        /// Metodo que sincroniza las companias
+        /// </summary>
+        public bool syncCompanias(string url, string ck, string cs, ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;            
+            DataTable dtCias = null;
+            StringBuilder json=new StringBuilder();
+            jsonHandler j = new jsonHandler();
+            int p = 0;
+
+            try
+            { 
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();               
+
+                //obtener companias a sync
+                dtCias = getCompaniasSync(transaction);               
+
+                while(p < dtCias.Rows.Count)
+                {
+                    //obtener encabezado
+                    json.Append(j.getHeader(ck, cs, "compania"));
+
+                    //obtener json de la cia
+                    json.Append(j.DataRowToJson(dtCias, p));
+
+                    //obtener footer
+                    json.Append(j.getFooter());
+
+                    //sync
+                    var client = new RestClient(url);
+                    var request = new RestRequest(Method.POST);
+                    request.AddParameter("application/json", json.ToString(), ParameterType.RequestBody);
+                    IRestResponse response = client.Execute(request);
+
+                    //revisar respuesta
+                    if(response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+
+                    }
+                    else
+                    {
+                        updIntConjunto(transaction, dtCias.Rows[p]["codigo"].ToString(), "E", response.Content, ref error);
+                    }
+
+                    //sgt cia - limpiar variables
+                    p++;
+                    json.Clear();
+                }
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[syncCompanias]: Se presentaron problemas sincronizando cias:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
