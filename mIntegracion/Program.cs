@@ -111,76 +111,21 @@ namespace mIntegracion
                         {
                             Application.Run(new frmVisor(sqlClass, 0));
                         }
-                        //else if (ejec.CompareTo("1") == 0) //Visor estandar sin CxC
-                        //{
-                        //    Application.Run(new frmVisor(sqlClass, 1));
-                        //}
-                        //else if (ejec.CompareTo("2") == 0) //Visor de generacion CxC
-                        //{
-                        //    Application.Run(new frmGenDocs(sqlClass));
-                        //}
-                        //else if (ejec.CompareTo("3") == 0) //Desatendido sin CxC los documentos
-                        //{
-                        //    Globales glb = new Globales(sqlClass);
-                        //    Facturacion fac = new Facturacion(sqlClass);
-                        //    //CuentasCobrar cc = new CuentasCobrar(sqlClass);
-                        //    System.Data.DataTable dtG = glb.getGlobales(sqlClass);
-                        //    Proceso prc = new Proceso(sqlClass);
-                        //    StringBuilder Errores = new StringBuilder();
-
-                        //    //genera pedidos
-                        //    okFlag = fac.generaPedido(dtG, ref idDoc, ref docGen, ref Errores);
-                        //    if (!okFlag)
-                        //        prc.insBitacoraINT("P", idDoc, "E", docGen, Errores.ToString(), ref Errores);
-
-                        //    //genera devoluciones
-                        //    if (okFlag)
-                        //    {
-                        //        okFlag = fac.generaDevolucion(dtG, ref idDoc, ref docGen, ref Errores);
-                        //        if (!okFlag)
-                        //            prc.insBitacoraINT("D", idDoc, "E", docGen, Errores.ToString(), ref Errores);
-                        //    }
-                        //    ////genera documentosCC
-                        //    //if (okFlag)
-                        //    //{
-                        //    //    okFlag = cc.generaDocumentoCC(dtG, ref tipoDoc, ref idDoc, ref docGen, ref Errores);
-                        //    //    if (!okFlag)
-                        //    //        prc.insBitacoraINT(tipoDoc, idDoc, "E", docGen, Errores.ToString(), ref Errores);
-                        //    //}                            
-                        //}
-                        //else if (ejec.CompareTo("4") == 0) //Desatendido todos los documentos
-                        //{
-                        //    Globales glb = new Globales(sqlClass);
-                        //    Facturacion fac = new Facturacion(sqlClass);
-                        //    CuentasCobrar cc = new CuentasCobrar(sqlClass);
-                        //    System.Data.DataTable dtG = glb.getGlobales(sqlClass);
-                        //    Proceso prc = new Proceso(sqlClass);
-                        //    StringBuilder Errores = new StringBuilder();
-                        //    /* 0 = Consecutivo del ERP
-                        //     * 1 = ID de Pocket Link */
-                        //    string modoConsec = ConfigurationManager.AppSettings["modoConsec"].ToString();
-
-                        //    //genera pedidos
-                        //    okFlag = fac.generaPedido(dtG, ref idDoc, ref docGen, ref Errores);
-                        //    if (!okFlag)
-                        //        prc.insBitacoraINT("P", idDoc, "E", docGen, Errores.ToString(), ref Errores);
-
-                        //    //genera devoluciones
-                        //    if (okFlag)
-                        //    {
-                        //        okFlag = fac.generaDevolucion(dtG, ref idDoc, ref docGen, ref Errores);
-                        //        if (!okFlag)
-                        //            prc.insBitacoraINT("D", idDoc, "E", docGen, Errores.ToString(), ref Errores);
-                        //    }
-                        //    //genera documentosCC
-                        //    if (okFlag)
-                        //    {
-                        //        okFlag = cc.generaDocumentoCC(dtG, modoConsec, ref tipoDoc, ref idDoc, ref docGen, ref Errores);
-                        //        if (!okFlag)
-                        //            prc.insBitacoraINT(tipoDoc, idDoc, "E", docGen, Errores.ToString(), ref Errores);
-                        //    }
-                        //}
-
+                        else if (ejec.CompareTo("1") == 0) //Corriendo desde tarea programada
+                        {
+                            Proceso prc = new Proceso(sqlClass);
+                            StringBuilder Errores = new StringBuilder();
+                            System.Data.DataTable dt = prc.getIntGlobales();
+                            string ck = dt.Rows[0]["CONSUMER_KEY"].ToString();
+                            string cs = dt.Rows[0]["CONSUMER_SECRET"].ToString();
+                            string url = dt.Rows[0]["SERVICE"].ToString();
+                            //cias
+                            prc.syncCompanias(url, ck, cs, ref Errores);
+                            //prov
+                            prc.syncProveedores(url, ck, cs, ref Errores);
+                            
+                                       
+                        }
                     }
                     catch (Exception ex)
                     {

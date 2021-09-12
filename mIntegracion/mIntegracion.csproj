@@ -75,6 +75,7 @@
     <Compile Include="Clases\Inventarios.cs" />
     <Compile Include="Clases\jsonHandler.cs" />
     <Compile Include="Clases\Proceso.cs" />
+    <Compile Include="Clases\responseHandler.cs" />
     <Compile Include="Clases\Seguridad.cs" />
     <Compile Include="Clases\SQL.cs" />
     <Compile Include="frmVisor.cs">

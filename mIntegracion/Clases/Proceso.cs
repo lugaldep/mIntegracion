@@ -8,6 +8,7 @@ using System.Collections;
 using System.Configuration;
 using System.Windows.Forms;
 using RestSharp;
+using Newtonsoft.Json;
 
 
 namespace mIntegracion.Clases
@@ -120,7 +121,7 @@ namespace mIntegracion.Clases
         /// <summary>
         /// Metodo encargado de extraer cias      
         /// </summary>
-        public DataTable getCompaniasSync(SqlTransaction transac)
+        public DataTable getCompaniasSync(SqlTransaction transac, string urlMultimedia)
         {
             DataTable dt = null;
             StringBuilder sentencia = new StringBuilder();
@@ -129,8 +130,9 @@ namespace mIntegracion.Clases
             sentencia.Append("NOMBRE nombre ");
             sentencia.Append(",TELEFONO telefono ");
             sentencia.Append(",NIT nit ");
-            sentencia.Append(",CONJUNTO codigo ");            
-            sentencia.Append(",isnull(LOGO, 'sinLogo') imagnombre  ");
+            sentencia.Append(",CONJUNTO codigo ");
+            sentencia.Append(",isnull('"+urlMultimedia+"'+LOGO, '" + urlMultimedia + "Logo_PRINCIPAL.BMP') imagnombre  ");
+            //sentencia.Append(",LOGO imagnombre  ");
             sentencia.Append("from  ");
             sentencia.Append(sqlClass.Compannia);
             sentencia.Append(".INT_CONJUNTO ");
@@ -287,6 +289,27 @@ namespace mIntegracion.Clases
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         /// <summary>
         /// Metodo que sincroniza las companias
         /// </summary>
@@ -297,6 +320,7 @@ namespace mIntegracion.Clases
             DataTable dtProv = null;
             StringBuilder json = new StringBuilder();
             jsonHandler j = new jsonHandler();
+            
             int p = 0;
 
             try
@@ -327,11 +351,19 @@ namespace mIntegracion.Clases
                     //revisar respuesta
                     if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-
+                        responseHandler r = JsonConvert.DeserializeObject<responseHandler>(response.Content);
+                        if(r.Status.CompareTo("OK")==0)
+                        {
+                            updIntProveedor(transaction, dtProv.Rows[p]["codigoproveedor"].ToString(), "S", string.Empty, ref error);
+                        }
+                        else
+                        {
+                            updIntProveedor(transaction, dtProv.Rows[p]["codigoproveedor"].ToString(), "E", r.Reason, ref error);
+                        }
                     }
                     else
                     {
-                        updIntConjunto(transaction, dtProv.Rows[p]["codigo"].ToString(), "E", response.Content, ref error);
+                        updIntProveedor(transaction, dtProv.Rows[p]["codigoproveedor"].ToString(), "E", response.Content, ref error);
                     }
 
                     //sgt cia - limpiar variables
@@ -381,7 +413,7 @@ namespace mIntegracion.Clases
                 transaction = sqlClass.SQLCon.BeginTransaction();               
 
                 //obtener companias a sync
-                dtCias = getCompaniasSync(transaction);               
+                dtCias = getCompaniasSync(transaction, ConfigurationManager.AppSettings["urlMultimedia"].ToString());               
 
                 while(p < dtCias.Rows.Count)
                 {
@@ -403,7 +435,15 @@ namespace mIntegracion.Clases
                     //revisar respuesta
                     if(response.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-
+                        responseHandler r = JsonConvert.DeserializeObject<responseHandler>(response.Content);
+                        if (r.Status.CompareTo("OK") == 0)
+                        {
+                            updIntConjunto(transaction, dtCias.Rows[p]["codigo"].ToString(), "S", string.Empty, ref error);
+                        }
+                        else
+                        {
+                            updIntConjunto(transaction, dtCias.Rows[p]["codigo"].ToString(), "E", r.Reason, ref error);
+                        }
                     }
                     else
                     {

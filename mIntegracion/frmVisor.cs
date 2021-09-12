@@ -128,6 +128,7 @@ namespace mIntegracion
         private void correrSync()
         {
             bool lbOk = true;
+            bool gOk = true; 
 
             try
             {
@@ -136,24 +137,28 @@ namespace mIntegracion
                 {
                     MessageBox.Show("El proceso de sincronización de compañías finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
+                else
+                    gOk = false;
 
                 lbOk = prc.syncProveedores(url, ck, cs, ref Errores);
                 if (lbOk)
                 {
                     MessageBox.Show("El proceso de sincronización de proveedores finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
+                else
+                    gOk = false;
 
 
 
 
 
 
-                if (lbOk)
+                if (gOk)
                 {
                     MessageBox.Show("El proceso de sincronización finalizo correctamente. " , "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
-                if (!lbOk)
+                if (!gOk)
                     MessageBox.Show("Ocurrieron errores: " + Errores.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
             }
