@@ -38,9 +38,17 @@ namespace mIntegracion.Clases
             return json;
         }
 
-
-
-
+        /// <summary>
+        /// Metodo convert un dr to Json  
+        /// </summary>
+        public string DataRowToJson(DataTable dt, int row, int cantRemove)
+        {
+            string json = new JObject(
+                       dt.Columns.Cast<DataColumn>()
+                       .Select(c => new JProperty(c.ColumnName, JToken.FromObject(dt.Rows[row][c])))
+                       ).ToString(Formatting.None);
+            return json.Substring(0,json.Length-cantRemove);
+        }
 
 
         /// <summary>
@@ -68,8 +76,40 @@ namespace mIntegracion.Clases
             return ("}}");
         }
 
+        /// <summary>
+        /// Metodo obtener el encabezado del json 
+        /// </summary>
+        public string getOpenArray()
+        {
+            return ("[");
+        }
+
+        /// <summary>
+        /// Metodo obtener el encabezado del json 
+        /// </summary>
+        public string getCloseArray()
+        {
+            return ("]");
+        }
+
+        /// <summary>
+        /// Metodo obtener el encabezado del json 
+        /// </summary>
+        public string getLines()
+        {
+            return (", \"lines\":  ");
+
+        }
 
 
+        /// <summary>
+        /// Metodo obtener el encabezado del json 
+        /// </summary>
+        public string getCloseLines()
+        {
+            return (" } ,");
+
+        }
 
     }
 }

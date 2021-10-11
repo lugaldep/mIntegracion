@@ -125,6 +125,49 @@ namespace mIntegracion
         }
 
 
+        private void correrExtraccion()
+        {
+            bool lbOk = true;
+            bool gOk = true;
+
+            try
+            {
+                lbOk = prc.extractSolicitudPagos(ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de solicitudes de pago finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+                lbOk = prc.extractPagos(ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de pagos finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+
+                if (gOk)
+                {
+                    MessageBox.Show("El proceso de extracción finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+
+                if (!gOk)
+                    MessageBox.Show("Ocurrieron errores: " + Errores.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            }
+            catch (Exception Ex)
+            {
+                MessageBox.Show("Ocurrieron errores: " + Ex.Message.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            }
+        }
+
+
         private void correrSync()
         {
             bool lbOk = true;
@@ -149,13 +192,28 @@ namespace mIntegracion
                     gOk = false;
 
 
+                lbOk = prc.syncSolicitudesPago(url, ck, cs, ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de sincronización de solicitudes de pago finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+                lbOk = prc.syncPagos(url, ck, cs, ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de sincronización de pagos finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
 
 
 
 
                 if (gOk)
                 {
-                    MessageBox.Show("El proceso de sincronización finalizo correctamente. " , "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("El proceso de sincronización finalizó correctamente. " , "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
                 if (!gOk)
@@ -169,62 +227,14 @@ namespace mIntegracion
             }
         }
 
+
+
+
         private void btnProceso_Click(object sender, EventArgs e)
         {
-
+            correrExtraccion();
 
             correrSync();
-
-
-            //jsonHandler j = new jsonHandler();
-
-            //DataTable dt = prc.getCompaniasSync();
-            
-            //string json = new JObject(
-            //            dt.Columns.Cast<DataColumn>()
-            //            .Select(c => new JProperty(c.ColumnName, JToken.FromObject(dt.Rows[1][c])))
-            //            ).ToString(Formatting.None);
-
-            //rtb.AppendText(json);
-            
-
-
-
-
-                
-
-
-
-
-
-            /*
-
-
-            string json = "{\"conexion\": {\"consumer_key\": \"cd8bcsgff8wccbjv9ue9c46dakc\",\"consumer_secret\": \"bz9ry3_cv58_0_b72tsyzdwe2gj7dfvr8bdctx6q4f\",\"type\":\"compania\",\"compania\": 	{		\"nombre\": \"Bahia San Felipe, S.A.\",	\"telefono\": \"22880101\",		\"nit\": \"3101371510\",		\"codigo\": \"BSF\",		\"imagnombre\": \"Logo_BSF.BMP\"	}}}";
-
-            var client = new RestClient("https://smarttools.smartstrategyapps.com/pinmsa/ControlDeProyectos2021/IntegracionControlProyecto.php");
-
-            //var request = new RestRequest(json, DataFormat.Json);
-            //var response = client.Execute(request);
-
-            var request = new RestRequest(Method.POST);
-            request.AddParameter("application/json", json, ParameterType.RequestBody);
-            IRestResponse response = client.Execute(request);
-            
-            response.StatusCode.ToString();
-
-
-            */
-
-
-
-
-
-
-
-
-
-
         }
 
         private void btnFiltrar_Click(object sender, EventArgs e)
@@ -292,3 +302,37 @@ namespace mIntegracion
         }
     }
 }
+
+
+
+//jsonHandler j = new jsonHandler();
+
+//DataTable dt = prc.getCompaniasSync();
+
+//string json = new JObject(
+//            dt.Columns.Cast<DataColumn>()
+//            .Select(c => new JProperty(c.ColumnName, JToken.FromObject(dt.Rows[1][c])))
+//            ).ToString(Formatting.None);
+
+//rtb.AppendText(json);
+
+
+/*
+
+
+string json = "{\"conexion\": {\"consumer_key\": \"cd8bcsgff8wccbjv9ue9c46dakc\",\"consumer_secret\": \"bz9ry3_cv58_0_b72tsyzdwe2gj7dfvr8bdctx6q4f\",\"type\":\"compania\",\"compania\": 	{		\"nombre\": \"Bahia San Felipe, S.A.\",	\"telefono\": \"22880101\",		\"nit\": \"3101371510\",		\"codigo\": \"BSF\",		\"imagnombre\": \"Logo_BSF.BMP\"	}}}";
+
+var client = new RestClient("https://smarttools.smartstrategyapps.com/pinmsa/ControlDeProyectos2021/IntegracionControlProyecto.php");
+
+//var request = new RestRequest(json, DataFormat.Json);
+//var response = client.Execute(request);
+
+var request = new RestRequest(Method.POST);
+request.AddParameter("application/json", json, ParameterType.RequestBody);
+IRestResponse response = client.Execute(request);
+
+response.StatusCode.ToString();
+
+
+*/
+

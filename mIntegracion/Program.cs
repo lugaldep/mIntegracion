@@ -119,12 +119,18 @@ namespace mIntegracion
                             string ck = dt.Rows[0]["CONSUMER_KEY"].ToString();
                             string cs = dt.Rows[0]["CONSUMER_SECRET"].ToString();
                             string url = dt.Rows[0]["SERVICE"].ToString();
+
+                            //proceso extraccion
+                            prc.extractSolicitudPagos(ref Errores);
+                            prc.extractPagos(ref Errores);
                             //cias
                             prc.syncCompanias(url, ck, cs, ref Errores);
                             //prov
                             prc.syncProveedores(url, ck, cs, ref Errores);
-                            
-                                       
+                            //solpagos
+                            prc.syncSolicitudesPago(url, ck, cs, ref Errores);
+                            //pagos
+                            prc.syncPagos(url, ck, cs, ref Errores);
                         }
                     }
                     catch (Exception ex)
@@ -139,11 +145,11 @@ namespace mIntegracion
                 okFlag = false;
             }
 
-            //if (!okFlag)
-            //{
-            //    if (ejec.CompareTo("0") == 0)                
-            //        MessageBox.Show(errores.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            //}
+            if (!okFlag)
+            {
+                if (ejec.CompareTo("0") == 0)
+                    MessageBox.Show(errores.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
 
         }
 

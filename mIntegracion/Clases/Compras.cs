@@ -15,10 +15,25 @@ namespace mIntegracion.Clases
     {
         private SQL sqlClass;
 
-        //***  ESTADO OC
-        //transito = E
-        //planeada = A
+        /*          
+         Estados de las Ordenes de Compra
 
+         OCPLANEADA = 'A'
+         TEXTO_OCPLANEADA = 'Planeada'
+         OCTRANSITO = 'E'
+         TEXTO_OCTRANSITO = 'Tránsito'
+         OCBACKORDER = 'I'
+         TEXTO_OCBACKORDER = 'Backorder'
+         OCCANCELADA = 'O'
+         TEXTO_OCCANCELADA = 'Cancelada'
+         OCCERRADA = 'U'
+         TEXTO_OCCERRADA = 'Cerrada'
+         OCRECIBIDA = 'R'
+         TEXTO_OCRECIBIDA = 'Recibida'
+         OCNOAPROBADA = 'N'
+         TEXTO_OCNOAPROBADA = 'No Aprobar'
+         
+         */
 
         public Compras(SQL _sqlClass)
         {

@@ -36,7 +36,7 @@
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>tikosoft.ico</ApplicationIcon>
+    <ApplicationIcon>Logo-T-RGB.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mAuthLic">
@@ -76,6 +76,7 @@
     <Compile Include="Clases\jsonHandler.cs" />
     <Compile Include="Clases\Proceso.cs" />
     <Compile Include="Clases\responseHandler.cs" />
+    <Compile Include="Clases\responseHandlerList.cs" />
     <Compile Include="Clases\Seguridad.cs" />
     <Compile Include="Clases\SQL.cs" />
     <Compile Include="frmVisor.cs">
@@ -86,6 +87,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Clases\responseHandlerArray.cs" />
     <EmbeddedResource Include="frmVisor.resx">
       <DependentUpon>frmVisor.cs</DependentUpon>
     </EmbeddedResource>
@@ -114,6 +116,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Logo-T-RGB.ico" />
     <Content Include="tikosoft.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
