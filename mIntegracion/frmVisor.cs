@@ -132,6 +132,15 @@ namespace mIntegracion
 
             try
             {
+                lbOk = prc.extractAnticipos(ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de anticipos finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
                 lbOk = prc.extractSolicitudPagos(ref Errores);
                 if (lbOk)
                 {
@@ -148,7 +157,6 @@ namespace mIntegracion
                 }
                 else
                     gOk = false;
-
 
 
                 if (gOk)

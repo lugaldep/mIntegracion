@@ -22,22 +22,11 @@ namespace mIntegracion
             Application.SetCompatibleTextRenderingDefault(false);
             SQL sqlClass = null;
             StringBuilder errores = new StringBuilder();
-            string user, pass, dataBase, server, cia, row, error = string.Empty;
-            string ejec = "0";
-            string idDoc = string.Empty;
-            string docGen = string.Empty;
-            string tipoDoc = string.Empty;
+            string user, pass, dataBase, server, cia = string.Empty;
+            string ejec = "0";         
             bool okFlag = true;
 #if DEBUG
             args = new string[6];
-
-            //args[0] = "sa";
-            //args[1] = "spTIF$7295";
-            //args[2] = "SOFTLAND";
-            //args[3] = "172.16.10.39";
-            //args[4] = "FARYVET";
-            //args[5] = "2";
-
 
             //args[0] = "sa";
             //args[1] = "sql@2019";
@@ -65,8 +54,7 @@ namespace mIntegracion
                 pass = args[1];
                 dataBase = args[2];
                 server = args[3];
-                cia = args[4];
-                row = string.Empty;
+                cia = args[4];                
                 ejec = args[5];
 
                 //se realiza una conexión de prueba
@@ -75,7 +63,7 @@ namespace mIntegracion
                     try
                     {
                         if (ConfigurationManager.AppSettings["Debug"].ToString().CompareTo("True") == 0)
-                            MessageBox.Show("Información de conexión\n Srv: " + server + "\n BD: " + dataBase + "\n Usr: " + user + "\n Pwd: " + pass + "\n Cia: " + cia + "\n Row: " + row, "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                            MessageBox.Show("Información de conexión\n Srv: " + server + "\n BD: " + dataBase + "\n Usr: " + user + "\n Pwd: " + pass + "\n Cia: " + cia, "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
 
                         sqlClass = new SQL(user, pass, dataBase, server, cia);
                     }
@@ -121,6 +109,7 @@ namespace mIntegracion
                             string url = dt.Rows[0]["SERVICE"].ToString();
 
                             //proceso extraccion
+                            prc.extractAnticipos(ref Errores);
                             prc.extractSolicitudPagos(ref Errores);
                             prc.extractPagos(ref Errores);
                             //cias

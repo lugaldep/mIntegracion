@@ -6,25 +6,24 @@ using System.Threading.Tasks;
 
 namespace mIntegracion.Clases
 {
-
-    public class recordID
+    public class recordIDS
     {
-        public string solicitudpago { get; set; }
+        public string idsolicitud { get; set; }
         public string record { get; set; }
     }
 
 
-    public class Reason
+    public class ReasonS
     {
-        public string solicitudpago { get; set; }
+        public string idsolicitud { get; set; }
         public string error { get; set; }
     }
 
 
-    public class responseHandlerList
+    public class responseHandlerSolPagos
     {
         public string Status { get; set; }
-        public IList<recordID> recordID { get; set; }
-        public IList<Reason> Reason { get; set; }
+        public IList<recordIDS> recordID { get; set; }
+        public IList<ReasonS> Reason { get; set; }
     }
 }

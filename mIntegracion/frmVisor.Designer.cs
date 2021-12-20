@@ -71,7 +71,8 @@
             this.btnSalir});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(800, 25);
+            this.toolStrip1.Padding = new System.Windows.Forms.Padding(0, 0, 2, 0);
+            this.toolStrip1.Size = new System.Drawing.Size(964, 25);
             this.toolStrip1.TabIndex = 21;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -152,7 +153,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 25);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(800, 102);
+            this.panel1.Size = new System.Drawing.Size(964, 102);
             this.panel1.TabIndex = 22;
             // 
             // cbTipo
@@ -237,9 +238,9 @@
             this.stMsg.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.stMsg.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.lbMensaje});
-            this.stMsg.Location = new System.Drawing.Point(0, 428);
+            this.stMsg.Location = new System.Drawing.Point(0, 480);
             this.stMsg.Name = "stMsg";
-            this.stMsg.Size = new System.Drawing.Size(800, 22);
+            this.stMsg.Size = new System.Drawing.Size(964, 22);
             this.stMsg.TabIndex = 24;
             this.stMsg.Text = "statusStrip1";
             // 
@@ -282,15 +283,16 @@
             dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
             dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.dg.RowHeadersDefaultCellStyle = dataGridViewCellStyle3;
+            this.dg.RowHeadersWidth = 40;
             this.dg.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dg.Size = new System.Drawing.Size(800, 301);
+            this.dg.Size = new System.Drawing.Size(964, 353);
             this.dg.TabIndex = 25;
             // 
             // frmVisor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(964, 502);
             this.Controls.Add(this.dg);
             this.Controls.Add(this.stMsg);
             this.Controls.Add(this.panel1);
@@ -298,7 +300,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "frmVisor";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Visor de bitacora ";
+            this.Text = "Visor de bitácora ";
             this.Load += new System.EventHandler(this.frmVisor_Load);
             this.toolStrip1.ResumeLayout(false);
             this.toolStrip1.PerformLayout();
