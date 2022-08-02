@@ -159,6 +159,15 @@ namespace mIntegracion
                     gOk = false;
 
 
+                lbOk = prc.extractNotasCredito(ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de notas de crédito finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
                 if (gOk)
                 {
                     MessageBox.Show("El proceso de extracción finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -236,8 +245,6 @@ namespace mIntegracion
         }
 
 
-
-
         private void btnProceso_Click(object sender, EventArgs e)
         {
             correrExtraccion();
@@ -297,7 +304,49 @@ namespace mIntegracion
             dtCreacionInicio.CustomFormat = " ";
             dtCreacionFin.CustomFormat = " ";
             cbTipo.SelectedIndex = 0;
+
+            if(ConfigurationManager.AppSettings["Debug"].ToString().CompareTo("True")==0)
+            {
+                txtJsons.Visible = true;
+                btnGeneraJsons.Visible = true;
+            }
+
+
         }
+
+        private void btnGeneraJsons_Click(object sender, EventArgs e)
+        {   
+            DataTable dtDocs = null;
+            StringBuilder json = new StringBuilder();
+            jsonHandler j = new jsonHandler();
+
+            try
+            {
+                //obtener encabezado
+                json.Append(j.getHeader(ck, cs, "pago"));
+
+                //abrir arreglo de docs
+                //json.Append(j.getOpenArray());
+
+                //select de los pagos a sincronizar
+                dtDocs = prc.getPagosCPSyncGEN();
+                
+                //genero json list
+                json.Append(j.DataTableToJson(dtDocs));                
+
+                //obtener footer
+                json.Append(j.getFooter());
+
+
+                txtJsons.Text = json.ToString();
+                
+            }
+            catch (Exception ex)
+            {   
+                txtJsons.Text = ex.Message.ToString();
+            }
+        }
+
 
         private void dtCreacionInicio_ValueChanged(object sender, EventArgs e)
         {

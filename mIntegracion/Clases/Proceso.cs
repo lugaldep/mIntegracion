@@ -22,6 +22,23 @@ namespace mIntegracion.Clases
             this.sqlClass = _sqlClass;
         }
 
+
+        /* INDICADOR DE SINCRONIZACION INTERNO PARA PAGOS
+         * IND_SINCRO	
+            C	CREADO
+            P	PAGADO
+            E	ERROR
+        */
+
+
+        /* INDICADOR DE PROCESO EN ANDAMIO
+         * IND_PROCESO	
+            P	PENDIENTE
+            S	SINCRONIZADO
+            E	ERROR
+        */
+
+
         public string EstadoCodigo(string estado)
         {
             switch (estado)
@@ -44,10 +61,6 @@ namespace mIntegracion.Clases
             Solicitudes de pago
             Pagos
         */
-
-
-
-      
 
         public string TipoCodigoBIT(string tipo)
         {
@@ -218,7 +231,7 @@ namespace mIntegracion.Clases
             sentencia.Append(",icp.ORDEN_SERVICIO ordenservicio ");
             sentencia.Append(",icp.DOCUMENTO numerodocumento ");
             sentencia.Append(",icp.TIPO tipodocumento ");
-            sentencia.Append(",icp.DOCUMENTO facturaplica ");
+            sentencia.Append(",ISNULL(icp.DOCUMENTO_APLIC, icp.DOCUMENTO) facturaplica ");
             sentencia.Append(",icp.FECHA fechafactura ");
             sentencia.Append(",icp.FECHA fecharige ");
             sentencia.Append(",icp.APLICACION descripciondocumento ");
@@ -314,8 +327,57 @@ namespace mIntegracion.Clases
             sentencia.Append(sqlClass.Compannia);
             sentencia.Append(".INT_DOCS_CP cp on p.CONJUNTO = cp.CONJUNTO and p.DOCUMENTO_CRE = cp.DOCUMENTO and p.TIPO_CRE = cp.TIPO and p.PROVEEDOR = cp.PROVEEDOR ");
             sentencia.Append("where p.IND_PROCESO = 'P' ");
+            sentencia.Append("AND p.TIPO_DEB <> 'N/C' "); //restriccion para que no sync las NC y se pasan estas como solicitudes de Pagos
 
             dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+
+        /// <summary>
+        /// Metodo encargado de extraer pagos      
+        /// </summary>
+        public DataTable getPagosCPSyncGEN()
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select ");
+            sentencia.Append("p.CONJUNTO+'|'+p.PROVEEDOR+'|'+p.DOCUMENTO_CRE+'|'+p.TIPO_CRE+'|'+p.DOCUMENTO_DEB+'|'+p.TIPO_DEB idpago ");
+            sentencia.Append(",cp.ORDEN_SERVICIO ordenservicio ");
+            sentencia.Append(",p.DOCUMENTO_CRE factura ");
+            sentencia.Append(",cp.FECHA_DOCUMENTO fechafactura ");
+            sentencia.Append(",p.MONEDA moneda ");
+            sentencia.Append(",p.MONTO_LOCAL monto ");
+            sentencia.Append(",p.MONTO_DOLAR montodolares ");
+            sentencia.Append(",p.DOCUMENTO_DEB documentodepago ");
+            sentencia.Append(",p.FECHA_DOCUMENTO fechapago ");
+            sentencia.Append(",p.MONTO_LOCAL montopagocrc ");
+            sentencia.Append(",p.TIPO_CAMBIO_DOLAR tipocambio ");
+            sentencia.Append(",'A' estado ");
+            sentencia.Append(",p.TIPO_DEB tipopago ");
+            sentencia.Append(",p.TIPO_CRE tipodocumentopagar ");
+            sentencia.Append(",p.ROWPOINTER rowpointer ");
+            sentencia.Append(",p.FECHA_VENCE fechaentregapago ");
+            sentencia.Append(",cp.SOLICITUD_PAGO solicitudpago ");
+            sentencia.Append(",p.MONTO_DOLAR montopagousd ");
+            sentencia.Append("from  ");
+            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(".INT_PAGOS_CP p inner join ");
+            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(".INT_DOCS_CP cp on p.CONJUNTO = cp.CONJUNTO and p.DOCUMENTO_CRE = cp.DOCUMENTO and p.TIPO_CRE = cp.TIPO and p.PROVEEDOR = cp.PROVEEDOR ");
+            sentencia.Append("where p.TIPO_DEB <> 'N/C' "); //restriccion para que no sync las NC y se pasan estas como solicitudes de Pagos
+            sentencia.Append("and p.DOCUMENTO_CRE in (");
+            sentencia.Append("'00100001010000007720'");
+            sentencia.Append(", '00100001010000007720'");
+            sentencia.Append(", '00500001010004389169'");
+            sentencia.Append(", '00500001010004389169'");
+            sentencia.Append(", '00100001010000002940'");
+            sentencia.Append(", '00100001010000002941')");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString());
 
             return dt;
         }
@@ -557,15 +619,6 @@ namespace mIntegracion.Clases
 
 
 
-    
-
-
-
-
-
-
-
-
         #region SolicitudPagos
 
         /*SOLICITUD DE PAGOS*/
@@ -584,15 +637,19 @@ namespace mIntegracion.Clases
             sentencia.Append(".INT_ORDEN_COMPRA ");
             sentencia.Append("where ORDEN_COMPRA is not null ");
 
+            //sentencia.Append("and CONJUNTO = 'ROCALLA' ");
+
+
             dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
 
             return dt;
         }
 
+
         /// <summary>
         /// --Obtener las ordenes de compra vigentes  
         /// </summary>
-        public DataTable getOCActivas(SqlTransaction transac, string cia)
+        public DataTable getOCActivas(SqlTransaction transac, string cia, string filtroEstadoOC)
         {
             DataTable dt = null;
             StringBuilder sentencia = new StringBuilder();
@@ -602,8 +659,9 @@ namespace mIntegracion.Clases
             sentencia.Append(sqlClass.Compannia);
             sentencia.Append(".INT_ORDEN_COMPRA ioc inner join ");
             sentencia.Append(cia);
-            sentencia.Append(".ORDEN_COMPRA oc on ioc.ORDEN_COMPRA = oc.ORDEN_COMPRA ");                        
-            sentencia.Append("where oc.ESTADO in ('I', 'R' )");
+            sentencia.Append(".ORDEN_COMPRA oc on ioc.ORDEN_COMPRA = oc.ORDEN_COMPRA ");
+            sentencia.Append("where oc.ESTADO in " + filtroEstadoOC);
+            sentencia.Append(" and ioc.CONJUNTO = '" + cia + "'");
 
             dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
 
@@ -615,7 +673,7 @@ namespace mIntegracion.Clases
         /// <summary>
         /// Metodo encargado de insertar cia | bod
         /// </summary>
-        public bool insIntDocsCP(SqlTransaction transac, string cia, string oc, string ocServicio, DataRow doc, ref StringBuilder errores)
+        public bool insIntDocsCP(SqlTransaction transac, string cia, string oc, string ocServicio, DataRow doc, string indSincro, ref StringBuilder errores)
         {
 
             bool lbOK = true;
@@ -691,7 +749,7 @@ namespace mIntegracion.Clases
                 cmd.Parameters.Add("@ORDEN_COMPRA      ", SqlDbType.VarChar, 10).Value = oc;
                 cmd.Parameters.Add("@ORDEN_SERVICIO      ", SqlDbType.BigInt).Value = ocServicio;
                 cmd.Parameters.Add("@EMBARQUE          ", SqlDbType.VarChar, 10).Value = doc["EMBARQUE"];
-                cmd.Parameters.Add("@IND_SINCRO        ", SqlDbType.VarChar, 1).Value = "C";
+                cmd.Parameters.Add("@IND_SINCRO        ", SqlDbType.VarChar, 1).Value = indSincro ;
                 cmd.Parameters.Add("@CP_ROWPOINTER     ", SqlDbType.VarChar, 100).Value = Convert.ToString(doc["RowPointer"]);
 
                 if (cmd.ExecuteNonQuery() < 1)
@@ -714,6 +772,110 @@ namespace mIntegracion.Clases
             return (lbOK);
         }
 
+
+        /// <summary>
+        /// Metodo encargado de insertar cia | bod
+        /// </summary>
+        public bool insIntDocsCP_Aplic(SqlTransaction transac, string cia, string oc, string ocServicio, DataRow doc, string indSincro, ref StringBuilder errores)
+        {
+
+            bool lbOK = true;
+            SqlCommand cmd = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("INSERT INTO ");
+                sentencia.Append(sqlClass.Compannia);
+                sentencia.Append(".INT_DOCS_CP ");
+                sentencia.Append("(CONJUNTO,PROVEEDOR,DOCUMENTO,TIPO,FECHA_DOCUMENTO,FECHA,APLICACION,MONTO,SALDO,SALDO_LOCAL,MONTO_DOLAR,SALDO_DOLAR,TIPO_CAMBIO_MONEDA");
+                sentencia.Append(",TIPO_CAMBIO_DOLAR,APROBADO,SELECCIONADO,CONGELADO,MONTO_PROV,SALDO_PROV,TIPO_CAMBIO_PROV,SUBTOTAL,DESCUENTO,IMPUESTO1,IMPUESTO2,FECHA_ULT_MOD");
+                sentencia.Append(",USUARIO_ULT_MOD,CONDICION_PAGO,MONEDA,SUBTIPO,FECHA_VENCE,FECHA_ANUL,AUD_USUARIO_ANUL,AUD_FECHA_ANUL,USUARIO_APROBACION,FECHA_APROBACION");
+                sentencia.Append(",ANULADO,FECHA_PROYECTADA,DOCUMENTO_FISCAL,ESTADO,NOTAS,IND_PROCESO,FCH_PROCESO,MONTO_LOCAL,ORDEN_COMPRA,EMBARQUE,IND_SINCRO,SUBTIPO_DESC,ORDEN_SERVICIO");
+                sentencia.Append(",CP_ROWPOINTER,DOCUMENTO_APLIC,TIPO_APLIC");
+                sentencia.Append(") VALUES (");
+                sentencia.Append("@CONJUNTO,@PROVEEDOR,@DOCUMENTO,@TIPO,@FECHA_DOCUMENTO,@FECHA,@APLICACION,@MONTO,@SALDO,@SALDO_LOCAL,@MONTO_DOLAR,@SALDO_DOLAR,@TIPO_CAMBIO_MONEDA");
+                sentencia.Append(",@TIPO_CAMBIO_DOLAR,@APROBADO,@SELECCIONADO,@CONGELADO,@MONTO_PROV,@SALDO_PROV,@TIPO_CAMBIO_PROV,@SUBTOTAL,@DESCUENTO,@IMPUESTO1,@IMPUESTO2,@FECHA_ULT_MOD");
+                sentencia.Append(",@USUARIO_ULT_MOD,@CONDICION_PAGO,@MONEDA,@SUBTIPO,@FECHA_VENCE,@FECHA_ANUL,@AUD_USUARIO_ANUL,@AUD_FECHA_ANUL,@USUARIO_APROBACION,@FECHA_APROBACION");
+                sentencia.Append(",@ANULADO,@FECHA_PROYECTADA,@DOCUMENTO_FISCAL,@ESTADO,@NOTAS,@IND_PROCESO,@FCH_PROCESO,@MONTO_LOCAL,@ORDEN_COMPRA,@EMBARQUE,@IND_SINCRO,@SUBTIPO_DESC,@ORDEN_SERVICIO");
+                sentencia.Append(",@CP_ROWPOINTER,@DOCUMENTO_APLIC,@TIPO_APLIC)");
+                //seteo el command
+                cmd = sqlClass.SQLCon.CreateCommand();
+                cmd.Transaction = transac;
+                cmd.CommandText = sentencia.ToString();
+
+                //seteo los parametros  
+                cmd.Parameters.Add("@CONJUNTO          ", SqlDbType.VarChar, 10).Value = cia;
+                cmd.Parameters.Add("@PROVEEDOR         ", SqlDbType.VarChar, 20).Value = doc["PROVEEDOR"];
+                cmd.Parameters.Add("@DOCUMENTO         ", SqlDbType.VarChar, 50).Value = doc["DOCUMENTO"];
+                cmd.Parameters.Add("@TIPO              ", SqlDbType.VarChar, 3).Value = doc["TIPO"];
+                cmd.Parameters.Add("@FECHA_DOCUMENTO   ", SqlDbType.DateTime).Value = doc["FECHA_DOCUMENTO"];
+                cmd.Parameters.Add("@FECHA             ", SqlDbType.DateTime).Value = doc["FECHA"];
+                cmd.Parameters.Add("@APLICACION        ", SqlDbType.VarChar, 249).Value = doc["APLICACION"];
+                cmd.Parameters.Add("@MONTO             ", SqlDbType.Decimal).Value = doc["MONTO"];
+                cmd.Parameters.Add("@SALDO             ", SqlDbType.Decimal).Value = doc["SALDO"];
+                cmd.Parameters.Add("@SALDO_LOCAL       ", SqlDbType.Decimal).Value = doc["SALDO_LOCAL"];
+                cmd.Parameters.Add("@MONTO_DOLAR       ", SqlDbType.Decimal).Value = doc["MONTO_DOLAR"];
+                cmd.Parameters.Add("@SALDO_DOLAR       ", SqlDbType.Decimal).Value = doc["SALDO_DOLAR"];
+                cmd.Parameters.Add("@TIPO_CAMBIO_MONEDA", SqlDbType.Decimal).Value = doc["TIPO_CAMBIO_MONEDA"];
+                cmd.Parameters.Add("@TIPO_CAMBIO_DOLAR ", SqlDbType.Decimal).Value = doc["TIPO_CAMBIO_DOLAR"];
+                cmd.Parameters.Add("@APROBADO          ", SqlDbType.VarChar, 1).Value = doc["APROBADO"];
+                cmd.Parameters.Add("@SELECCIONADO      ", SqlDbType.VarChar, 1).Value = doc["SELECCIONADO"];
+                cmd.Parameters.Add("@CONGELADO         ", SqlDbType.VarChar, 1).Value = doc["CONGELADO"];
+                cmd.Parameters.Add("@MONTO_PROV        ", SqlDbType.Decimal).Value = doc["MONTO_PROV"];
+                cmd.Parameters.Add("@SALDO_PROV        ", SqlDbType.Decimal).Value = doc["SALDO_PROV"];
+                cmd.Parameters.Add("@TIPO_CAMBIO_PROV  ", SqlDbType.Decimal).Value = doc["TIPO_CAMBIO_PROV"];
+                cmd.Parameters.Add("@SUBTOTAL          ", SqlDbType.Decimal).Value = doc["SUBTOTAL"];
+                cmd.Parameters.Add("@DESCUENTO         ", SqlDbType.Decimal).Value = doc["DESCUENTO"];
+                cmd.Parameters.Add("@IMPUESTO1         ", SqlDbType.Decimal).Value = doc["IMPUESTO1"];
+                cmd.Parameters.Add("@IMPUESTO2         ", SqlDbType.Decimal).Value = doc["IMPUESTO2"];
+                cmd.Parameters.Add("@FECHA_ULT_MOD     ", SqlDbType.DateTime).Value = doc["FECHA_ULT_MOD"];
+                cmd.Parameters.Add("@USUARIO_ULT_MOD   ", SqlDbType.VarChar, 25).Value = doc["USUARIO_ULT_MOD"];
+                cmd.Parameters.Add("@CONDICION_PAGO    ", SqlDbType.VarChar, 4).Value = doc["CONDICION_PAGO"];
+                cmd.Parameters.Add("@MONEDA            ", SqlDbType.VarChar, 4).Value = doc["MONEDA"];
+                cmd.Parameters.Add("@SUBTIPO           ", SqlDbType.VarChar, 50).Value = doc["SUBTIPO"];
+                cmd.Parameters.Add("SUBTIPO_DESC       ", SqlDbType.VarChar, 25).Value = doc["SUBTIPO_DESC"];
+                cmd.Parameters.Add("@FECHA_VENCE       ", SqlDbType.DateTime, 50).Value = doc["FECHA_VENCE"];
+                cmd.Parameters.Add("@FECHA_ANUL        ", SqlDbType.DateTime, 50).Value = doc["FECHA_ANUL"];
+                cmd.Parameters.Add("@AUD_USUARIO_ANUL  ", SqlDbType.VarChar, 25).Value = doc["AUD_USUARIO_ANUL"];
+                cmd.Parameters.Add("@AUD_FECHA_ANUL    ", SqlDbType.DateTime, 50).Value = doc["AUD_FECHA_ANUL"];
+                cmd.Parameters.Add("@USUARIO_APROBACION", SqlDbType.VarChar, 25).Value = doc["USUARIO_APROBACION"];
+                cmd.Parameters.Add("@FECHA_APROBACION  ", SqlDbType.DateTime).Value = doc["FECHA_APROBACION"];
+                cmd.Parameters.Add("@ANULADO           ", SqlDbType.VarChar, 1).Value = doc["ANULADO"];
+                cmd.Parameters.Add("@FECHA_PROYECTADA  ", SqlDbType.DateTime).Value = doc["FECHA_PROYECTADA"];
+                cmd.Parameters.Add("@DOCUMENTO_FISCAL  ", SqlDbType.VarChar, 50).Value = doc["DOCUMENTO_FISCAL"];
+                cmd.Parameters.Add("@ESTADO            ", SqlDbType.VarChar, 1).Value = doc["ESTADO"];
+                cmd.Parameters.Add("@NOTAS             ", SqlDbType.VarChar, 2500).Value = doc["NOTAS"];
+                cmd.Parameters.Add("@IND_PROCESO       ", SqlDbType.VarChar, 1).Value = "P";
+                cmd.Parameters.Add("@FCH_PROCESO       ", SqlDbType.DateTime).Value = DateTime.Now.ToString("yyyy-MM-dd");
+                cmd.Parameters.Add("@MONTO_LOCAL       ", SqlDbType.Decimal).Value = doc["MONTO_LOCAL"];
+                cmd.Parameters.Add("@ORDEN_COMPRA      ", SqlDbType.VarChar, 10).Value = oc;
+                cmd.Parameters.Add("@ORDEN_SERVICIO      ", SqlDbType.BigInt).Value = ocServicio;
+                cmd.Parameters.Add("@EMBARQUE          ", SqlDbType.VarChar, 10).Value = doc["EMBARQUE"];
+                cmd.Parameters.Add("@IND_SINCRO        ", SqlDbType.VarChar, 1).Value = indSincro;
+                cmd.Parameters.Add("@CP_ROWPOINTER     ", SqlDbType.VarChar, 100).Value = Convert.ToString(doc["RowPointer"]);
+                cmd.Parameters.Add("@DOCUMENTO_APLIC ", SqlDbType.VarChar, 50).Value = doc["DOCUMENTO_APLIC"];
+                cmd.Parameters.Add("@TIPO_APLIC     ", SqlDbType.VarChar, 3).Value = doc["TIPO_APLIC"];
+
+                if (cmd.ExecuteNonQuery() < 1)
+                {
+                    errores.AppendLine("[insIntDocsCP]: Se presentaron problemas insertando INT_DOCS_CP: ");
+                    errores.AppendLine(oc);
+                    lbOK = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[insIntDocsCP]: Detalle Técnico: " + e.Message);
+                lbOK = false;
+            }
+            finally
+            {
+                cmd.Dispose();
+                cmd = null;
+            }
+            return (lbOK);
+        }
 
 
         /// <summary>
@@ -834,7 +996,7 @@ namespace mIntegracion.Clases
             sentencia.Append(cia + ".DOCUMENTOS_CP cp  ");            
             sentencia.Append("inner join " + cia + ".SUBTIPO_DOC_CP sdcp on cp.SUBTIPO = sdcp.SUBTIPO ");
             sentencia.Append("where cp.TIPO = '" + tipo + "' ");
-            sentencia.Append("and cp.SUBTIPO = '" + subtipo + "' ");
+            sentencia.Append("and cp.SUBTIPO in " + subtipo + " ");
             sentencia.Append("and cp.U_ORDEN_COMPRA = '" + oc + "' ");
 
             dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
@@ -848,59 +1010,229 @@ namespace mIntegracion.Clases
         /// <summary>
         /// --Obtener las ordenes de compra vigentes  
         /// </summary>
+        public DataTable getNotasCredito(SqlTransaction transac, string cia, string tipo)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select  pcp.PROVEEDOR ");
+            sentencia.Append(",pcp.DOCUMENTO_DEB DOCUMENTO  ");
+            sentencia.Append(",pcp.TIPO_DEB TIPO  ");
+            sentencia.Append(",pcp.DOCUMENTO_CRE DOCUMENTO_APLIC  ");
+            sentencia.Append(",pcp.TIPO_CRE TIPO_APLIC  ");
+            sentencia.Append(",cp.FECHA_DOCUMENTO  ");
+            sentencia.Append(",cp.FECHA  ");
+            sentencia.Append(",cp.APLICACION ");
+            sentencia.Append(",cp.MONTO  ");
+            sentencia.Append(",cp.SALDO  ");
+            sentencia.Append(",cp.SALDO_LOCAL  ");
+            sentencia.Append(",cp.MONTO_DOLAR  ");
+            sentencia.Append(",cp.SALDO_DOLAR  ");
+            sentencia.Append(",cp.TIPO_CAMBIO_MONEDA  ");
+            sentencia.Append(",cp.TIPO_CAMBIO_DOLAR  ");
+            sentencia.Append(",cp.APROBADO  ");
+            sentencia.Append(",cp.SELECCIONADO  ");
+            sentencia.Append(",cp.CONGELADO  ");
+            sentencia.Append(",cp.MONTO_PROV  ");
+            sentencia.Append(",cp.SALDO_PROV  ");
+            sentencia.Append(",cp.TIPO_CAMBIO_PROV  ");
+            sentencia.Append(",cp.SUBTOTAL  ");
+            sentencia.Append(",cp.DESCUENTO  ");
+            sentencia.Append(",cp.IMPUESTO1  ");
+            sentencia.Append(",cp.IMPUESTO2  ");
+            sentencia.Append(",cp.FECHA_ULT_MOD  ");
+            sentencia.Append(",cp.USUARIO_ULT_MOD  ");
+            sentencia.Append(",cp.CONDICION_PAGO  ");
+            sentencia.Append(",cp.MONEDA  ");
+            sentencia.Append(",cp.SUBTIPO  ");
+            sentencia.Append(",cp.FECHA_VENCE  ");
+            sentencia.Append(",cp.FECHA_ANUL  ");
+            sentencia.Append(",cp.AUD_USUARIO_ANUL  ");
+            sentencia.Append(",cp.AUD_FECHA_ANUL  ");
+            sentencia.Append(",cp.USUARIO_APROBACION  ");
+            sentencia.Append(",cp.FECHA_APROBACION  ");
+            sentencia.Append(",cp.ANULADO  ");
+            sentencia.Append(",cp.FECHA_PROYECTADA  ");
+            sentencia.Append(",cp.DOCUMENTO_FISCAL  ");
+            sentencia.Append(",cp.ESTADO  ");
+            sentencia.Append(",cp.NOTAS  ");
+            sentencia.Append(",cp.MONTO_LOCAL  ");
+            sentencia.Append(",icp.ORDEN_COMPRA, icp.ORDEN_SERVICIO  ");
+            sentencia.Append(",icp.EMBARQUE  ");
+            sentencia.Append(",sdcp.DESCRIPCION SUBTIPO_DESC ");
+            sentencia.Append(",icpl.ORDEN_COMPRA_LINEA ");
+            sentencia.Append(",icpl.ORDEN_SERVICIO_LINEA ");
+            sentencia.Append(",cp.RowPointer  ");
+            sentencia.Append(",icpl.SUBTOTAL SUBTOTAL_L ");
+            sentencia.Append(",icpl.IVA IMPUESTO1_L ");
+            sentencia.Append(",icpl.BRUTO TOTAL_L   ");
+            sentencia.Append(" from  ");
+            sentencia.Append(sqlClass.Compannia + ".INT_PAGOS_CP pcp ");
+            sentencia.Append("inner join " + sqlClass.Compannia  + ".INT_DOCS_CP icp on pcp.PROVEEDOR = icp.PROVEEDOR ");
+            sentencia.Append("								and pcp.DOCUMENTO_CRE = icp.DOCUMENTO ");
+            sentencia.Append("								and pcp.TIPO_CRE = icp.TIPO	");
+            sentencia.Append("inner join " + sqlClass.Compannia + ".INT_DOCS_CP_LINEAS icpl on icp.PROVEEDOR = icpl.PROVEEDOR ");
+            sentencia.Append("								and icp.DOCUMENTO = icpl.DOCUMENTO");
+            sentencia.Append("								and icp.TIPO = icpl.TIPO ");
+            sentencia.Append("inner join " + cia + ".DOCUMENTOS_CP cp on pcp.PROVEEDOR = cp.PROVEEDOR ");
+            sentencia.Append("								and pcp.DOCUMENTO_DEB = cp.DOCUMENTO ");
+            sentencia.Append("								and pcp.TIPO_DEB = cp.TIPO	");
+            sentencia.Append("inner join " + cia + ".SUBTIPO_DOC_CP sdcp on cp.SUBTIPO = sdcp.SUBTIPO ");
+            sentencia.Append("WHERE pcp.TIPO_DEB = '" + tipo + "' ");
+            //sentencia.Append("and icp.IND_SINCRO = 'C'"); //PAGOS SIN SINCRONIZAR
+            sentencia.Append("and pcp.IND_PROCESO = 'P' "); //PAGOS SIN SINCRONIZAR
+
+            sentencia.Append(" order by pcp.PROVEEDOR, pcp.DOCUMENTO_DEB, pcp.TIPO_DEB asc ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /*METODO SIN AGRUPACION*/
+
+        ///// <summary>
+        ///// --Obtener las ordenes de compra vigentes  
+        ///// </summary>
+        //public DataTable getSolPagosDocs(SqlTransaction transac, string cia, string oc)
+        //{
+        //    DataTable dt = null;
+        //    StringBuilder sentencia = new StringBuilder();
+
+        //    sentencia.Append("select ");
+        //    sentencia.Append(" el.PROVEEDOR ");
+        //    sentencia.Append(",el.DOCUMENTO ");
+        //    sentencia.Append(",cp.TIPO ");
+        //    sentencia.Append(",cp.FECHA_DOCUMENTO ");
+        //    sentencia.Append(",cp.FECHA ");
+        //    sentencia.Append(",cp.APLICACION ");
+        //    sentencia.Append(",cp.MONTO ");
+        //    sentencia.Append(",cp.SALDO ");
+        //    sentencia.Append(",cp.SALDO_LOCAL ");
+        //    sentencia.Append(",cp.MONTO_DOLAR ");
+        //    sentencia.Append(",cp.SALDO_DOLAR ");
+        //    sentencia.Append(",cp.TIPO_CAMBIO_MONEDA ");
+        //    sentencia.Append(",cp.TIPO_CAMBIO_DOLAR ");
+        //    sentencia.Append(",cp.APROBADO ");
+        //    sentencia.Append(",cp.SELECCIONADO ");
+        //    sentencia.Append(",cp.CONGELADO ");
+        //    sentencia.Append(",cp.MONTO_PROV ");
+        //    sentencia.Append(",cp.SALDO_PROV ");
+        //    sentencia.Append(",cp.TIPO_CAMBIO_PROV ");
+        //    sentencia.Append(",cp.SUBTOTAL ");
+        //    sentencia.Append(",cp.DESCUENTO ");
+        //    sentencia.Append(",cp.IMPUESTO1 ");
+        //    sentencia.Append(",cp.IMPUESTO2 ");
+        //    sentencia.Append(",cp.FECHA_ULT_MOD ");
+        //    sentencia.Append(",cp.USUARIO_ULT_MOD ");
+        //    sentencia.Append(",cp.CONDICION_PAGO ");
+        //    sentencia.Append(",cp.MONEDA ");
+        //    sentencia.Append(",cp.SUBTIPO ");
+        //    sentencia.Append(",cp.FECHA_VENCE ");
+        //    sentencia.Append(",cp.FECHA_ANUL ");
+        //    sentencia.Append(",cp.AUD_USUARIO_ANUL ");
+        //    sentencia.Append(",cp.AUD_FECHA_ANUL ");
+        //    sentencia.Append(",cp.USUARIO_APROBACION ");
+        //    sentencia.Append(",cp.FECHA_APROBACION ");
+        //    sentencia.Append(",cp.ANULADO ");
+        //    sentencia.Append(",cp.FECHA_PROYECTADA ");
+        //    sentencia.Append(",cp.DOCUMENTO_FISCAL ");
+        //    sentencia.Append(",cp.ESTADO ");
+        //    sentencia.Append(",cp.NOTAS ");
+        //    //sentencia.Append("--IND_PROCESO ");
+        //    //sentencia.Append("--FCH_PROCESO ");
+        //    //sentencia.Append("--MENSAJE ");
+        //    sentencia.Append(",cp.MONTO_LOCAL ");            
+        //    sentencia.Append(",oc.ORDEN_COMPRA ");
+        //    sentencia.Append(",el.EMBARQUE ");
+        //    sentencia.Append(",sdcp.DESCRIPCION SUBTIPO_DESC, ocl.ORDEN_COMPRA_LINEA, ocl.U_RECORDID_QB ORDEN_SERVICIO_LINEA,cp.RowPointer ");
+        //    sentencia.Append(",el.CANTIDAD_RECIBIDA ,el.SUBTOTAL SUBTOTAL_L, el.DESCUENTO DESCUENTO_L, el.IMPUESTO1 IMPUESTO1_L, el.IMPUESTO2 IMPUESTO2_L, (el.SUBTOTAL + el.IMPUESTO1 + el.IMPUESTO2)-el.DESCUENTO TOTAL_L ");
+        //    sentencia.Append(" from  ");
+        //    sentencia.Append(cia + ".ORDEN_COMPRA oc ");
+        //    sentencia.Append("left join " + cia + ".ORDEN_COMPRA_LINEA ocl on oc.ORDEN_COMPRA = ocl.ORDEN_COMPRA ");
+        //    sentencia.Append("left join " + cia + ".EMBARQUE_LINEA el on oc.ORDEN_COMPRA = el.ORDEN_COMPRA ");
+        //    sentencia.Append("						and ocl.ORDEN_COMPRA_LINEA = el.ORDEN_COMPRA_LINEA ");
+        //    //sentencia.Append("left join " + sqlClass.Compannia + ".INT_OC_LINEA iocl on ocl.ORDEN_COMPRA = iocl.ORDEN_COMPRA ");
+        //    //sentencia.Append("						and ocl.ORDEN_COMPRA_LINEA = iocl.ORDEN_COMPRA_LINEA ");
+        //    //sentencia.Append("						and iocl.CONJUNTO = '" + cia + "' ");
+        //    sentencia.Append("left join " + cia + ".DOCUMENTOS_CP cp on el.DOCUMENTO = cp.DOCUMENTO ");
+        //    sentencia.Append("						and el.PROVEEDOR = cp.PROVEEDOR ");
+        //    //sentencia.Append("						--and el.TIPO_DOCUMENTO = cp.TIPO ");
+        //    sentencia.Append("left join " + cia + ".EMBARQUE_DOC_CP ecp on el.EMBARQUE = ecp.EMBARQUE ");
+        //    sentencia.Append("						and el.DOCUMENTO = ecp.DOCUMENTO ");
+        //    sentencia.Append("						and el.PROVEEDOR = ecp.PROVEEDOR ");
+        //    sentencia.Append("inner join " + cia + ".SUBTIPO_DOC_CP sdcp on cp.SUBTIPO = sdcp.SUBTIPO ");            
+        //    sentencia.Append("where oc.ORDEN_COMPRA = '" + oc +"' ");
+
+        //    dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+        //    return dt;
+        //}
+
+
+
+        /// <summary>
+        /// --Obtener las ordenes de compra vigentes  
+        /// </summary>
         public DataTable getSolPagosDocs(SqlTransaction transac, string cia, string oc)
         {
             DataTable dt = null;
             StringBuilder sentencia = new StringBuilder();
 
             sentencia.Append("select ");
-            sentencia.Append(" el.PROVEEDOR ");
-            sentencia.Append(",el.DOCUMENTO ");
-            sentencia.Append(",cp.TIPO ");
-            sentencia.Append(",cp.FECHA_DOCUMENTO ");
-            sentencia.Append(",cp.FECHA ");
-            sentencia.Append(",cp.APLICACION ");
-            sentencia.Append(",cp.MONTO ");
-            sentencia.Append(",cp.SALDO ");
-            sentencia.Append(",cp.SALDO_LOCAL ");
-            sentencia.Append(",cp.MONTO_DOLAR ");
-            sentencia.Append(",cp.SALDO_DOLAR ");
-            sentencia.Append(",cp.TIPO_CAMBIO_MONEDA ");
-            sentencia.Append(",cp.TIPO_CAMBIO_DOLAR ");
-            sentencia.Append(",cp.APROBADO ");
-            sentencia.Append(",cp.SELECCIONADO ");
-            sentencia.Append(",cp.CONGELADO ");
-            sentencia.Append(",cp.MONTO_PROV ");
-            sentencia.Append(",cp.SALDO_PROV ");
-            sentencia.Append(",cp.TIPO_CAMBIO_PROV ");
-            sentencia.Append(",cp.SUBTOTAL ");
-            sentencia.Append(",cp.DESCUENTO ");
-            sentencia.Append(",cp.IMPUESTO1 ");
-            sentencia.Append(",cp.IMPUESTO2 ");
-            sentencia.Append(",cp.FECHA_ULT_MOD ");
-            sentencia.Append(",cp.USUARIO_ULT_MOD ");
-            sentencia.Append(",cp.CONDICION_PAGO ");
-            sentencia.Append(",cp.MONEDA ");
-            sentencia.Append(",cp.SUBTIPO ");
-            sentencia.Append(",cp.FECHA_VENCE ");
-            sentencia.Append(",cp.FECHA_ANUL ");
-            sentencia.Append(",cp.AUD_USUARIO_ANUL ");
-            sentencia.Append(",cp.AUD_FECHA_ANUL ");
-            sentencia.Append(",cp.USUARIO_APROBACION ");
-            sentencia.Append(",cp.FECHA_APROBACION ");
-            sentencia.Append(",cp.ANULADO ");
-            sentencia.Append(",cp.FECHA_PROYECTADA ");
-            sentencia.Append(",cp.DOCUMENTO_FISCAL ");
-            sentencia.Append(",cp.ESTADO ");
-            sentencia.Append(",cp.NOTAS ");
-            //sentencia.Append("--IND_PROCESO ");
-            //sentencia.Append("--FCH_PROCESO ");
-            //sentencia.Append("--MENSAJE ");
-            sentencia.Append(",cp.MONTO_LOCAL ");            
-            sentencia.Append(",oc.ORDEN_COMPRA ");
-            sentencia.Append(",el.EMBARQUE ");
-            sentencia.Append(",sdcp.DESCRIPCION SUBTIPO_DESC, ocl.ORDEN_COMPRA_LINEA, ocl.U_RECORDID_QB ORDEN_SERVICIO_LINEA,cp.RowPointer ");
-            sentencia.Append(",el.CANTIDAD_RECIBIDA ,el.SUBTOTAL SUBTOTAL_L, el.DESCUENTO DESCUENTO_L, el.IMPUESTO1 IMPUESTO1_L, el.IMPUESTO2 IMPUESTO2_L, (el.SUBTOTAL + el.IMPUESTO1 + el.IMPUESTO2)-el.DESCUENTO TOTAL_L ");
+            sentencia.Append(" el.PROVEEDOR  ");
+            sentencia.Append(",el.DOCUMENTO  ");
+            sentencia.Append(",cp.TIPO  ");
+            sentencia.Append(",max(cp.FECHA_DOCUMENTO) FECHA_DOCUMENTO ");
+            sentencia.Append(",max(cp.FECHA)  FECHA ");
+            sentencia.Append(",max(cp.APLICACION) APLICACION  ");
+            sentencia.Append(",max(cp.MONTO) 				MONTO  ");
+            sentencia.Append(",max(cp.SALDO) 				SALDO  ");
+            sentencia.Append(",max(cp.SALDO_LOCAL) 		SALDO_LOCAL  ");
+            sentencia.Append(",max(cp.MONTO_DOLAR) 		MONTO_DOLAR  ");
+            sentencia.Append(",max(cp.SALDO_DOLAR) 		SALDO_DOLAR  ");
+            sentencia.Append(",max(cp.TIPO_CAMBIO_MONEDA)	TIPO_CAMBIO_MONEDA ");
+            sentencia.Append(",max(cp.TIPO_CAMBIO_DOLAR) 	TIPO_CAMBIO_DOLAR  ");
+            sentencia.Append(",max(cp.APROBADO) 			APROBADO  ");
+            sentencia.Append(",max(cp.SELECCIONADO) 		SELECCIONADO  ");
+            sentencia.Append(",max(cp.CONGELADO) 			CONGELADO  ");
+            sentencia.Append(",max(cp.MONTO_PROV)			MONTO_PROV  ");
+            sentencia.Append(",max(cp.SALDO_PROV)			SALDO_PROV  ");
+            sentencia.Append(",max(cp.TIPO_CAMBIO_PROV) 	TIPO_CAMBIO_PROV  ");
+            sentencia.Append(",max(cp.SUBTOTAL) 			SUBTOTAL  ");
+            sentencia.Append(",max(cp.DESCUENTO) 			DESCUENTO  ");
+            sentencia.Append(",max(cp.IMPUESTO1) 		   IMPUESTO1  ");
+            sentencia.Append(",max(cp.IMPUESTO2) 		   IMPUESTO2  ");
+            sentencia.Append(",max(cp.FECHA_ULT_MOD) 	   FECHA_ULT_MOD  ");
+            sentencia.Append(",max(cp.USUARIO_ULT_MOD)   USUARIO_ULT_MOD  ");
+            sentencia.Append(",max(cp.CONDICION_PAGO)    CONDICION_PAGO  ");
+            sentencia.Append(",max(cp.MONEDA)			   MONEDA  ");
+            sentencia.Append(",max(cp.SUBTIPO) 		   SUBTIPO  ");
+            sentencia.Append(",max(cp.FECHA_VENCE) 	   FECHA_VENCE  ");
+            sentencia.Append(",max(cp.FECHA_ANUL)		   FECHA_ANUL  ");
+            sentencia.Append(",max(cp.AUD_USUARIO_ANUL)  AUD_USUARIO_ANUL  ");
+            sentencia.Append(",max(cp.AUD_FECHA_ANUL)	   AUD_FECHA_ANUL  ");
+            sentencia.Append(",max(cp.USUARIO_APROBACION) USUARIO_APROBACION ");
+            sentencia.Append(",max(cp.FECHA_APROBACION)  FECHA_APROBACION  ");
+            sentencia.Append(",max(cp.ANULADO) 		   ANULADO  ");
+            sentencia.Append(",max(cp.FECHA_PROYECTADA)  FECHA_PROYECTADA  ");
+            sentencia.Append(",max(cp.DOCUMENTO_FISCAL) DOCUMENTO_FISCAL ");
+            sentencia.Append(",max(cp.ESTADO) 	ESTADO  ");
+            sentencia.Append(",max(cast(cp.NOTAS as varchar(8000))) NOTAS             ");
+            sentencia.Append(",max(cp.MONTO_LOCAL) MONTO_LOCAL             ");
+            sentencia.Append(",oc.ORDEN_COMPRA  ");
+            sentencia.Append(",el.EMBARQUE  ");
+            sentencia.Append(",max(sdcp.DESCRIPCION) SUBTIPO_DESC ");
+            sentencia.Append(",max(ocl.ORDEN_COMPRA_LINEA) ORDEN_COMPRA_LINEA ");
+            sentencia.Append(",ocl.U_RECORDID_QB ORDEN_SERVICIO_LINEA ");
+            sentencia.Append(",max(cp.RowPointer) RowPointer ");
+            sentencia.Append(",sum(el.CANTIDAD_RECIBIDA) CANTIDAD_RECIBIDA ");
+            sentencia.Append(",sum(el.SUBTOTAL) SUBTOTAL_L ");
+            sentencia.Append(",sum(el.DESCUENTO) DESCUENTO_L ");
+            sentencia.Append(",sum(el.IMPUESTO1) IMPUESTO1_L ");
+            sentencia.Append(",sum(el.IMPUESTO2) IMPUESTO2_L ");
+            sentencia.Append(",sum((el.SUBTOTAL + el.IMPUESTO1 + el.IMPUESTO2)-el.DESCUENTO) TOTAL_L  ");
             sentencia.Append(" from  ");
             sentencia.Append(cia + ".ORDEN_COMPRA oc ");
             sentencia.Append("left join " + cia + ".ORDEN_COMPRA_LINEA ocl on oc.ORDEN_COMPRA = ocl.ORDEN_COMPRA ");
@@ -915,8 +1247,16 @@ namespace mIntegracion.Clases
             sentencia.Append("left join " + cia + ".EMBARQUE_DOC_CP ecp on el.EMBARQUE = ecp.EMBARQUE ");
             sentencia.Append("						and el.DOCUMENTO = ecp.DOCUMENTO ");
             sentencia.Append("						and el.PROVEEDOR = ecp.PROVEEDOR ");
-            sentencia.Append("inner join " + cia + ".SUBTIPO_DOC_CP sdcp on cp.SUBTIPO = sdcp.SUBTIPO ");            
-            sentencia.Append("where oc.ORDEN_COMPRA = '" + oc +"' ");
+            sentencia.Append("inner join " + cia + ".SUBTIPO_DOC_CP sdcp on cp.SUBTIPO = sdcp.SUBTIPO ");
+            sentencia.Append("where oc.ORDEN_COMPRA = '" + oc + "' ");
+            sentencia.Append("group by  el.PROVEEDOR ");
+            sentencia.Append(",el.DOCUMENTO  ");
+            sentencia.Append(",cp.TIPO  ");
+            sentencia.Append(",oc.ORDEN_COMPRA  ");
+            sentencia.Append(",el.EMBARQUE  ");
+            sentencia.Append(",ocl.U_RECORDID_QB ");
+            sentencia.Append(" order by el.PROVEEDOR ,el.DOCUMENTO  ,cp.TIPO asc ");
+
             dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
 
             return dt;
@@ -947,10 +1287,6 @@ namespace mIntegracion.Clases
 
 
 
-
-
-
-
         /// <summary>
         /// Metodo que extrae las solicitudes de pago y las inserta en el andamio
         /// </summary>
@@ -977,7 +1313,7 @@ namespace mIntegracion.Clases
                     cia = drCia["CONJUNTO"].ToString();
 
                     //Obtener las ordenes de compra vigentes
-                    dtOC = getOCActivas(transaction, cia);
+                    dtOC = getOCActivas(transaction, cia, "('E', 'I', 'R' )");
 
                     foreach (DataRow drOC in dtOC.Rows)
                     {
@@ -995,7 +1331,7 @@ namespace mIntegracion.Clases
                                 , drDoc["TIPO"].ToString()) <= 0)
                                 {
                                     //inserto en el andamio
-                                    ok = insIntDocsCP(transaction, cia, drOC["ORDEN_COMPRA"].ToString(), drOC["ORDEN_SERVICIO"].ToString(), drDoc, ref error);
+                                    ok = insIntDocsCP(transaction, cia, drOC["ORDEN_COMPRA"].ToString(), drOC["ORDEN_SERVICIO"].ToString(), drDoc, "C", ref error);
                                    
                                 }
                             }
@@ -1027,6 +1363,128 @@ namespace mIntegracion.Clases
 
 
 
+        /// <summary>
+        /// Metodo que extrae las solicitudes de pago y las inserta en el andamio
+        /// </summary>
+        public bool extractNotasCredito(ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            string NC = "N/C";
+            string prov = string.Empty, docu = string.Empty, tipo = string.Empty;
+            DataTable dtCia, dtDocs = null;
+
+            try
+            {   
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener los documentos 
+                dtCia = getIntCompanias(transaction);
+                string cia = string.Empty;
+
+                foreach (DataRow drCia in dtCia.Rows)
+                {
+                    cia = drCia["CONJUNTO"].ToString();
+
+                    //Obtener lo docs de los anticipos 
+                    dtDocs = getNotasCredito(transaction, cia, NC);
+                    
+                    if (dtDocs.Rows.Count > 0)
+                    {
+                        foreach (DataRow drDoc in dtDocs.Rows)
+                        {
+                            //Validar si existen
+                            if (existIntDoc(transaction, cia
+                            , drDoc["PROVEEDOR"].ToString()
+                            , drDoc["DOCUMENTO"].ToString()
+                            , drDoc["TIPO"].ToString()) <= 0)
+                            {
+                                //inserto en el andamio
+                                ok = insIntDocsCP_Aplic(transaction, cia, drDoc["ORDEN_COMPRA"].ToString(), drDoc["ORDEN_SERVICIO"].ToString(), drDoc, "P", ref error);
+
+                                //inserto lineas en andamio
+                                if (ok)
+                                {
+                                    ok = insIntDocsCPLineas(transaction, cia, drDoc["ORDEN_COMPRA"].ToString(), drDoc["ORDEN_SERVICIO"].ToString(), drDoc, ref error);
+                                }
+                                //indicar tmp para procesar las multiples lineas 
+                                if (ok)
+                                {
+                                    prov = drDoc["PROVEEDOR"].ToString();
+                                    docu = drDoc["DOCUMENTO"].ToString();
+                                    tipo = drDoc["TIPO"].ToString();
+                                }
+
+                                if (ok)
+                                {
+
+                                    //actualizar el pago como sincronizado para la N/C
+
+                                    //actualizo pago en andamio
+                                    ok = updIntPagosCP(transaction
+                                        , cia
+                                        , drDoc["PROVEEDOR"].ToString()
+                                        , drDoc["DOCUMENTO_APLIC"].ToString()
+                                        , drDoc["TIPO_APLIC"].ToString()
+                                        , drDoc["DOCUMENTO"].ToString()
+                                        , drDoc["TIPO"].ToString()
+                                        , "S"
+                                        , string.Empty
+                                        , ref error);
+                                }
+
+                                if (ok)
+                                {
+                                    //actualizo el IntDocCP en indicador pendiente de pago
+                                    ok = updIntDocCP(transaction
+                                     , cia
+                                     , drDoc["PROVEEDOR"].ToString()
+                                     , drDoc["DOCUMENTO_APLIC"].ToString()
+                                     , drDoc["TIPO_APLIC"].ToString()
+                                     , "P" //pagado
+                                     , ref error);
+                                }
+
+
+                                if (!ok)
+                                    break;
+
+                            }
+                            else if ((prov.CompareTo(drDoc["PROVEEDOR"].ToString()) == 0)
+                                  && (docu.CompareTo(drDoc["DOCUMENTO"].ToString()) == 0)
+                                  && (tipo.CompareTo(drDoc["TIPO"].ToString()) == 0)) //valida si hay mas lineas que asoc en la misma factura
+                            {
+                                ok = insIntDocsCPLineas(transaction, cia, drDoc["ORDEN_COMPRA"].ToString(), drDoc["ORDEN_SERVICIO"].ToString(), drDoc, ref error);
+                            }
+                        }                        
+                    }
+
+                    if (!ok)
+                        break;
+
+                }
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[extractNotasCredito]: Se presentaron problemas extrayendo solicitudes de pago:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
 
 
 
@@ -1039,7 +1497,7 @@ namespace mIntegracion.Clases
         {
             SqlTransaction transaction = null;
             bool ok = true;
-            
+            string prov = string.Empty, docu = string.Empty, tipo = string.Empty;
             DataTable dtCia, dtOC, dtDocs = null;
 
             try
@@ -1055,14 +1513,13 @@ namespace mIntegracion.Clases
                     cia = drCia["CONJUNTO"].ToString();
 
                     //Obtener las ordenes de compra vigentes
-                    dtOC = getOCActivas(transaction, cia);
+                    dtOC = getOCActivas(transaction, cia, "('I', 'R' )");
 
                     foreach (DataRow drOC in dtOC.Rows)
                     {
                         //Obtener lo docs de la OC
                         dtDocs = getSolPagosDocs(transaction, cia, drOC["ORDEN_COMPRA"].ToString());
 
-                        bool ind = false;
                         if (dtDocs.Rows.Count > 0)
                         {
                             foreach (DataRow drDoc in dtDocs.Rows)
@@ -1073,9 +1530,8 @@ namespace mIntegracion.Clases
                                 , drDoc["DOCUMENTO"].ToString()
                                 , drDoc["TIPO"].ToString()) <= 0)
                                 {
-
                                     //inserto en el andamio
-                                    ok = insIntDocsCP(transaction, cia, drOC["ORDEN_COMPRA"].ToString(), drOC["ORDEN_SERVICIO"].ToString(), drDoc, ref error);
+                                    ok = insIntDocsCP(transaction, cia, drOC["ORDEN_COMPRA"].ToString(), drOC["ORDEN_SERVICIO"].ToString(), drDoc, "C", ref error);
 
                                     //inserto lineas en andamio
                                     if (ok)
@@ -1084,13 +1540,28 @@ namespace mIntegracion.Clases
                                     }
                                     //indicar tmp para procesar las multiples lineas 
                                     if (ok)
-                                        ind = true;
+                                    {                                        
+                                        prov = drDoc["PROVEEDOR"].ToString();
+                                        docu = drDoc["DOCUMENTO"].ToString();
+                                        tipo = drDoc["TIPO"].ToString();
+                                    }
                                 }
-                                else  if(ind) //valida si hay mas lineas que asoc en la misma factura
-                                    ok = insIntDocsCPLineas(transaction, cia, drOC["ORDEN_COMPRA"].ToString(), drOC["ORDEN_SERVICIO"].ToString(), drDoc, ref error);
+                                else if ( (prov.CompareTo(drDoc["PROVEEDOR"].ToString())==0) 
+                                          &&(docu.CompareTo(drDoc["DOCUMENTO"].ToString())==0)
+                                          &&(tipo.CompareTo(drDoc["TIPO"].ToString())==0) ) //valida si hay mas lineas que asoc en la misma factura
+                                {
+                                        ok = insIntDocsCPLineas(transaction, cia, drOC["ORDEN_COMPRA"].ToString(), drOC["ORDEN_SERVICIO"].ToString(), drDoc, ref error);
+
+                                }
+
+                                if (!ok)
+                                    break;
 
                             }
                         }
+
+                        if (!ok)
+                            break;
                     }
                 }
 

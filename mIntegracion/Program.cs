@@ -36,14 +36,21 @@ namespace mIntegracion
             //args[5] = "0";
 
 
-            args[0] = "sa";
-            args[1] = "lL@Pe!rBe*";
-            args[2] = "PRUEBAS";
-            args[3] = @"172.30.1.65\DESARROLLO,14334";
+            //args[0] = "sa";
+            //args[1] = "lL@Pe!rBe*";
+            //args[2] = "PRUEBAS";
+            //args[3] = @"172.30.1.65\DESARROLLO,14334";
+            //args[4] = "PRINCIPAL";
+            //args[5] = "0";
+
+
+
+            args[0] = "erpadmin";
+            args[1] = "PlazaBratsi1";
+            args[2] = "PORTAFOLIO";
+            args[3] = @"172.30.1.65";
             args[4] = "PRINCIPAL";
             args[5] = "0";
-
-
 
 #endif
             //$U$P$B$S$C
@@ -112,6 +119,7 @@ namespace mIntegracion
                             prc.extractAnticipos(ref Errores);
                             prc.extractSolicitudPagos(ref Errores);
                             prc.extractPagos(ref Errores);
+                            prc.extractNotasCredito(ref Errores);
                             //cias
                             prc.syncCompanias(url, ck, cs, ref Errores);
                             //prov
