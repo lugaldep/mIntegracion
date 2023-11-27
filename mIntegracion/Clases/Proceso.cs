@@ -16,10 +16,12 @@ namespace mIntegracion.Clases
     class Proceso
     {
         private SQL sqlClass;
+        private Nomina nom;
         private const string ciaPrin = "PRINCIPAL";
         public Proceso(SQL _sqlClass)
         {
             this.sqlClass = _sqlClass;
+            nom = new Nomina(_sqlClass);
         }
 
 
@@ -39,6 +41,17 @@ namespace mIntegracion.Clases
         */
 
 
+
+
+        /* TIPO DE MOVS DE PRESUPUESTO
+         * TIPO
+         * N    NOMINA
+         * C    CAJA CHICA
+         * S    SALDOS
+         */
+          
+         
+
         public string EstadoCodigo(string estado)
         {
             switch (estado)
@@ -54,6 +67,7 @@ namespace mIntegracion.Clases
                     return ("P");
             }
         }
+
         /*
             Compañías
             Proveedores
@@ -61,7 +75,6 @@ namespace mIntegracion.Clases
             Solicitudes de pago
             Pagos
         */
-
         public string TipoCodigoBIT(string tipo)
         {
             switch (tipo)
@@ -81,15 +94,36 @@ namespace mIntegracion.Clases
             }
         }
 
+       
+        public string tipoPresupuesto(string tipo)
+        {
+            switch (tipo)
+            {
+                case "N":
+                    return ("nomina");
+                case "C":
+                    return ("cajachica");
+                case "S":
+                    return ("ajustesaldo");
+                
+                default:
+                    return ("C");
+            }
+        }
+
+
+
+
+
         /// <summary>
         /// Metodo encargado de extraer cias      
         /// </summary>
         public DataTable getIntGlobales()
-        {
+        {           
             DataTable dt = null;
             StringBuilder sentencia = new StringBuilder();
 
-            sentencia.Append("select BODEGA, PAIS, DEPARTAMENTO, SERVICE, CONSUMER_KEY, CONSUMER_SECRET ");           
+            sentencia.Append("select BODEGA, PAIS, DEPARTAMENTO, SERVICE, CONSUMER_KEY, CONSUMER_SECRET, SERVICE_OPE, CONSUMER_KEY_OPE, CONSUMER_SECRET_OPE ");           
             sentencia.Append("from  ");
             sentencia.Append(sqlClass.Compannia);
             sentencia.Append(".INT_GLOBALES ");            
@@ -214,6 +248,90 @@ namespace mIntegracion.Clases
             return dt;
         }
 
+
+        // <summary>
+        /// Metodo encargado de extraer cias      
+        /// </summary>
+        public DataTable getPresupSync(SqlTransaction transac, string tipo)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select CONJUNTO, ID, TIPO ");
+            sentencia.Append("from  ");
+            sentencia.Append(ciaPrin);
+            sentencia.Append(".INT_MOVS_PRESUP ");
+            sentencia.Append("where IND_PROCESO = 'P' ");
+            sentencia.Append("and  TIPO = '" + tipo + "'");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+        // <summary>
+        /// Metodo encargado de extraer cias      
+        /// </summary>
+        public DataTable getPresupSync(SqlTransaction transac, string conjunto, Int64 id, string tipo)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("SELECT ");
+            sentencia.Append(" ID id ");
+            sentencia.Append(",CONJUNTO compania ");
+            sentencia.Append(",DOCUMENTO documento ");
+            sentencia.Append(",FECHA fecha ");
+            sentencia.Append(",MES mes ");
+            sentencia.Append(",ANNO anno ");
+            sentencia.Append(",DESCRIPCION descripciondocumento ");
+            sentencia.Append(",MONTO monto ");
+            sentencia.Append(",MONTOCOL montocol ");
+            sentencia.Append(",MONTODOL montodol ");
+            sentencia.Append(",TIPOCAMBIO tipocambio ");
+            sentencia.Append(",'' idqb ");
+            sentencia.Append("from  ");
+            sentencia.Append(ciaPrin);
+            sentencia.Append(".INT_MOVS_PRESUP ");
+            sentencia.Append("where IND_PROCESO = 'P' ");
+            sentencia.Append("and  TIPO = '" + tipo + "'");
+            sentencia.Append("and  CONJUNTO = '" + conjunto + "'");
+            sentencia.Append("and  ID = " + id );
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        // <summary>
+        /// Metodo encargado de extraer cias      
+        /// </summary>
+        public DataTable getPresupLineasSync(SqlTransaction transac, string conjunto, Int64 id, string tipo)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("SELECT ");
+            sentencia.Append(" d.CENTRO_COSTO centrocosto ");
+            sentencia.Append(",d.CUENTA_CONTABLE cuentacontable ");
+            sentencia.Append(",d.DESCRIPCION descripcion ");
+            sentencia.Append(",d.MONTOCOL montocol ");
+            sentencia.Append(",d.MONTODOL montodol ");
+            sentencia.Append(",d.NOTAS notas ");
+            sentencia.Append("FROM  ");
+            sentencia.Append(ciaPrin);
+            sentencia.Append(".INT_MOVS_PRESUP p inner join  ");
+            sentencia.Append(ciaPrin);
+            sentencia.Append(".INT_MOVS_PRESUP_DET d on p.CONJUNTO = d.CONJUNTO and p.ID = d.ID  ");
+            sentencia.Append("where p.TIPO = '" + tipo + "'");
+            sentencia.Append("and  p.CONJUNTO = '" + conjunto + "'");
+            sentencia.Append("and  p.ID = " + id);
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
 
 
         /// <summary>
@@ -562,7 +680,7 @@ namespace mIntegracion.Clases
             sentencia.Append("MENSAJE Mensaje ");            
             sentencia.Append("from ");
 
-            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(ciaPrin);
            
             if (tipoCod.CompareTo("C") == 0)
                 //cia
@@ -614,11 +732,6 @@ namespace mIntegracion.Clases
 
 
 
-
-
-
-
-
         #region SolicitudPagos
 
         /*SOLICITUD DE PAGOS*/
@@ -656,7 +769,7 @@ namespace mIntegracion.Clases
 
             sentencia.Append("select ioc.ORDEN_COMPRA, ioc.ORDEN_SERVICIO ");
             sentencia.Append("from  ");
-            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(ciaPrin);
             sentencia.Append(".INT_ORDEN_COMPRA ioc inner join ");
             sentencia.Append(cia);
             sentencia.Append(".ORDEN_COMPRA oc on ioc.ORDEN_COMPRA = oc.ORDEN_COMPRA ");
@@ -1077,7 +1190,7 @@ namespace mIntegracion.Clases
             sentencia.Append("inner join " + cia + ".DOCUMENTOS_CP cp on pcp.PROVEEDOR = cp.PROVEEDOR ");
             sentencia.Append("								and pcp.DOCUMENTO_DEB = cp.DOCUMENTO ");
             sentencia.Append("								and pcp.TIPO_DEB = cp.TIPO	");
-            sentencia.Append("inner join " + cia + ".SUBTIPO_DOC_CP sdcp on cp.SUBTIPO = sdcp.SUBTIPO ");
+            sentencia.Append("inner join " + cia + ".SUBTIPO_DOC_CP sdcp on cp.SUBTIPO = sdcp.SUBTIPO and sdcp.TIPO = cp.TIPO	");
             sentencia.Append("WHERE pcp.TIPO_DEB = '" + tipo + "' ");
             //sentencia.Append("and icp.IND_SINCRO = 'C'"); //PAGOS SIN SINCRONIZAR
             sentencia.Append("and pcp.IND_PROCESO = 'P' "); //PAGOS SIN SINCRONIZAR
@@ -1508,6 +1621,7 @@ namespace mIntegracion.Clases
                 //obtener cias en el andamio
                 dtCia = getIntCompanias(transaction);
                 string cia = string.Empty;
+
                 foreach (DataRow drCia in dtCia.Rows)
                 {
                     cia = drCia["CONJUNTO"].ToString();
@@ -1596,7 +1710,6 @@ namespace mIntegracion.Clases
         #endregion
 
 
-
         #region Pagos
 
         /// <summary>
@@ -1609,7 +1722,7 @@ namespace mIntegracion.Clases
 
             sentencia.Append("select CONJUNTO, PROVEEDOR, DOCUMENTO, TIPO, SOLICITUD_PAGO, ORDEN_SERVICIO ");
             sentencia.Append("from  ");
-            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(ciaPrin);
             sentencia.Append(".INT_DOCS_CP ");
             //sentencia.Append("where IND_SINCRO = 'C' and APROBADO = 'S' and CONGELADO = 'N' ");
             //sentencia.Append("where IND_SINCRO = 'C' and APROBADO = 'S' ");
@@ -1621,8 +1734,61 @@ namespace mIntegracion.Clases
         }
 
 
+
         /// <summary>
-        /// --Obtener la informacion del pago
+        /// Obtener los facturas pendientes de pagar del andamio      
+        /// </summary>
+        public DataTable getCiasIntPagosCP(SqlTransaction transac)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select distinct CONJUNTO ");
+            sentencia.Append("from  ");
+            sentencia.Append(ciaPrin);
+            sentencia.Append(".INT_PAGOS_CP ");
+            sentencia.Append("order by 1 asc ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// Obtener los facturas pendientes de pagar del andamio      
+        /// </summary>
+        public DataTable getIntPagosCPAnulados(SqlTransaction transac, string cia)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select p.CONJUNTO ");
+            sentencia.Append(",p.PROVEEDOR ");
+            sentencia.Append(",p.DOCUMENTO_CRE ");
+            sentencia.Append(",p.TIPO_CRE ");
+            sentencia.Append(",p.DOCUMENTO_DEB ");
+            sentencia.Append(",p.TIPO_DEB ");
+            sentencia.Append(",a.DEBITO ");
+            sentencia.Append(",a.TIPO_DEBITO ");
+            sentencia.Append("from " + ciaPrin + ".INT_PAGOS_CP p ");
+            sentencia.Append("left join " + cia + ".AUXILIAR_CP a on p.PROVEEDOR = a.PROVEEDOR ");
+            sentencia.Append("and p.DOCUMENTO_CRE = a.CREDITO ");
+            sentencia.Append("and p.TIPO_CRE = a.TIPO_CREDITO ");
+            sentencia.Append("and p.DOCUMENTO_DEB = a.DEBITO ");
+            sentencia.Append("and p.TIPO_DEB = a.TIPO_DEBITO ");
+            sentencia.Append("where p.CONJUNTO = '" + cia + "'");
+            sentencia.Append("and a.DEBITO is null ");
+            sentencia.Append("and a.TIPO_DEBITO is null ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// --Obtener la informacion del pago estandar
         /// </summary>
         public DataTable getPagosCP(SqlTransaction transac, string cia, string prov, string doc, string tipo, string tipoPago)
         {
@@ -1659,6 +1825,81 @@ namespace mIntegracion.Clases
             return dt;
         }
 
+        /// <summary>
+        /// --Obtener la informacion del pago para descuentos OC
+        /// </summary>
+        public DataTable getPagosCP(SqlTransaction transac, string cia, string prov, string doc, string tipo, string tipoPago, string subTipoPago)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select ");
+            sentencia.Append(" aux.PROVEEDOR ");
+            sentencia.Append(",aux.CREDITO DOCUMENTO_CRE ");
+            sentencia.Append(",aux.TIPO_CREDITO TIPO_CRE ");
+            sentencia.Append(",aux.DEBITO DOCUMENTO_DEB ");
+            sentencia.Append(",aux.TIPO_DEBITO TIPO_DEB ");
+            sentencia.Append(",cp.FECHA ");
+            sentencia.Append(",cp.FECHA_DOCUMENTO ");
+            sentencia.Append(",cp.FECHA_VENCE ");
+            sentencia.Append(",aux.MONEDA_DEBITO MONEDA ");
+            sentencia.Append(",aux.MONTO_LOCAL ");
+            sentencia.Append(",aux.MONTO_DOLAR ");
+            sentencia.Append(",cp.TIPO_CAMBIO_MONEDA ");
+            sentencia.Append(",cp.TIPO_CAMBIO_DOLAR ");
+            sentencia.Append(",cp.ROWPOINTER ");
+            sentencia.Append("from  ");
+            sentencia.Append(cia);
+            sentencia.Append(".AUXILIAR_CP aux inner join ");
+            sentencia.Append(cia);
+            sentencia.Append(".DOCUMENTOS_CP cp on aux.DEBITO = cp.DOCUMENTO and aux.TIPO_DEBITO = cp.TIPO and aux.PROVEEDOR = cp.PROVEEDOR ");
+            sentencia.Append("where aux.CREDITO = '" + doc + "' ");
+            sentencia.Append("and aux.PROVEEDOR = '" + prov + "' ");
+            sentencia.Append("and aux.TIPO_CREDITO = '" + tipo + "' ");
+            sentencia.Append(" and aux.TIPO_DEBITO in " + tipoPago);
+            sentencia.Append(" and cp.SUBTIPO in " + subTipoPago);
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+        /// <summary>
+        /// --Obtener la informacion de un pago especifico 
+        /// </summary>
+        public DataTable getPagosCP(SqlTransaction transac, string cia, string prov, string doc, string tipo)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select ");
+            sentencia.Append(" aux.PROVEEDOR ");
+            sentencia.Append(",aux.CREDITO DOCUMENTO_CRE ");
+            sentencia.Append(",aux.TIPO_CREDITO TIPO_CRE ");
+            sentencia.Append(",aux.DEBITO DOCUMENTO_DEB ");
+            sentencia.Append(",aux.TIPO_DEBITO TIPO_DEB ");
+            sentencia.Append(",cp.FECHA ");
+            sentencia.Append(",cp.FECHA_DOCUMENTO ");
+            sentencia.Append(",cp.FECHA_VENCE ");
+            sentencia.Append(",aux.MONEDA_DEBITO MONEDA ");
+            sentencia.Append(",aux.MONTO_LOCAL ");
+            sentencia.Append(",aux.MONTO_DOLAR ");
+            sentencia.Append(",cp.TIPO_CAMBIO_MONEDA ");
+            sentencia.Append(",cp.TIPO_CAMBIO_DOLAR ");
+            sentencia.Append(",cp.ROWPOINTER ");
+            sentencia.Append("from  ");
+            sentencia.Append(cia);
+            sentencia.Append(".AUXILIAR_CP aux inner join ");
+            sentencia.Append(cia);
+            sentencia.Append(".DOCUMENTOS_CP cp on aux.DEBITO = cp.DOCUMENTO and aux.TIPO_DEBITO = cp.TIPO and aux.PROVEEDOR = cp.PROVEEDOR ");
+            sentencia.Append("where aux.CREDITO = '" + doc + "' ");
+            sentencia.Append("and aux.PROVEEDOR = '" + prov + "' ");
+            sentencia.Append("and aux.TIPO_CREDITO = '" + tipo + "' ");            
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
 
         /// <summary>
         /// Metodo valida si existe     
@@ -1668,7 +1909,7 @@ namespace mIntegracion.Clases
             int q = 0;
             StringBuilder sentencia = new StringBuilder();
             sentencia.Append("SELECT COUNT(1) FROM ");
-            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(ciaPrin);
             sentencia.Append(".INT_PAGOS_CP ");
             sentencia.Append("WHERE CONJUNTO = '");
             sentencia.Append(cia);
@@ -1697,7 +1938,7 @@ namespace mIntegracion.Clases
 
             sentencia.Append("select CONJUNTO, PROVEEDOR, DOCUMENTO_CRE, TIPO_CRE, DOCUMENTO_DEB, TIPO_DEB ");
             sentencia.Append("from  ");
-            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(ciaPrin);
             sentencia.Append(".INT_PAGOS_CP ");
             sentencia.Append("where IND_PROCESO = 'P' ");
 
@@ -1777,6 +2018,74 @@ namespace mIntegracion.Clases
 
 
         /// <summary>
+        /// Metodo encargado de insertar cia | bod
+        /// </summary>
+        public bool insIntPagosCP(SqlTransaction transac, string cia, string prov, string doc, string tip, DataRow pago, ref StringBuilder errores)
+        {
+
+            bool lbOK = true;
+            SqlCommand cmd = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("INSERT INTO ");
+                sentencia.Append(sqlClass.Compannia);
+                sentencia.Append(".INT_PAGOS_CP ");
+                sentencia.Append("(CONJUNTO,PROVEEDOR,DOCUMENTO_CRE,TIPO_CRE,DOCUMENTO_DEB,TIPO_DEB,FECHA,FECHA_DOCUMENTO,FECHA_VENCE,MONEDA,MONTO_LOCAL");
+                sentencia.Append(",MONTO_DOLAR,TIPO_CAMBIO_MONEDA,TIPO_CAMBIO_DOLAR,ROWPOINTER,IND_PROCESO,FCH_PROCESO,MENSAJE");
+                sentencia.Append(") VALUES (");
+                sentencia.Append("@CONJUNTO,@PROVEEDOR,@DOCUMENTO_CRE,@TIPO_CRE,@DOCUMENTO_DEB,@TIPO_DEB,@FECHA,@FECHA_DOCUMENTO,@FECHA_VENCE,@MONEDA,@MONTO_LOCAL");
+                sentencia.Append(",@MONTO_DOLAR,@TIPO_CAMBIO_MONEDA,@TIPO_CAMBIO_DOLAR,@ROWPOINTER,@IND_PROCESO,@FCH_PROCESO,@MENSAJE");
+                sentencia.Append(")");
+
+                //seteo el command
+                cmd = sqlClass.SQLCon.CreateCommand();
+                cmd.Transaction = transac;
+                cmd.CommandText = sentencia.ToString();
+
+                //seteo los parametros  
+                cmd.Parameters.Add("@CONJUNTO          ", SqlDbType.VarChar, 10).Value = cia;
+                cmd.Parameters.Add("@PROVEEDOR         ", SqlDbType.VarChar, 20).Value = prov;
+                cmd.Parameters.Add("@DOCUMENTO_CRE     ", SqlDbType.VarChar, 50).Value = doc;
+                cmd.Parameters.Add("@TIPO_CRE          ", SqlDbType.VarChar, 3).Value = tip;
+                cmd.Parameters.Add("@DOCUMENTO_DEB     ", SqlDbType.VarChar, 50).Value = pago["DOCUMENTO_DEB"];
+                cmd.Parameters.Add("@TIPO_DEB          ", SqlDbType.VarChar, 3).Value = pago["TIPO_DEB"];
+                cmd.Parameters.Add("@FECHA             ", SqlDbType.DateTime).Value = pago["FECHA"];
+                cmd.Parameters.Add("@FECHA_DOCUMENTO   ", SqlDbType.DateTime).Value = pago["FECHA_DOCUMENTO"];
+                cmd.Parameters.Add("@FECHA_VENCE       ", SqlDbType.DateTime).Value = pago["FECHA_VENCE"];
+                cmd.Parameters.Add("@MONEDA            ", SqlDbType.VarChar, 4).Value = pago["MONEDA"];
+                cmd.Parameters.Add("@MONTO_LOCAL       ", SqlDbType.Decimal).Value = pago["MONTO_LOCAL"];
+                cmd.Parameters.Add("@MONTO_DOLAR       ", SqlDbType.Decimal).Value = pago["MONTO_DOLAR"];
+                cmd.Parameters.Add("@TIPO_CAMBIO_MONEDA", SqlDbType.Decimal).Value = pago["TIPO_CAMBIO_MONEDA"];
+                cmd.Parameters.Add("@TIPO_CAMBIO_DOLAR ", SqlDbType.Decimal).Value = pago["TIPO_CAMBIO_DOLAR"];
+                cmd.Parameters.Add("@ROWPOINTER        ", SqlDbType.VarChar, 100).Value = Convert.ToString(pago["RowPointer"]);
+                cmd.Parameters.Add("@IND_PROCESO       ", SqlDbType.VarChar, 1).Value = "P";
+                cmd.Parameters.Add("@FCH_PROCESO       ", SqlDbType.DateTime).Value = DateTime.Now.ToString("yyyy-MM-dd");
+                cmd.Parameters.Add("@MENSAJE           ", SqlDbType.VarChar, 500).Value = string.Empty;
+
+                if (cmd.ExecuteNonQuery() < 1)
+                {
+                    errores.AppendLine("[insIntPagosCP]: Se presentaron problemas insertando INT_PAGOS_CP: ");
+                    errores.AppendLine(prov + " | Credito: " + doc + " | Debito: " + pago["DOCUMENTO_DEB"].ToString());
+                    lbOK = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[insIntPagosCP]: Detalle Técnico: " + e.Message);
+                lbOK = false;
+            }
+            finally
+            {
+                cmd.Dispose();
+                cmd = null;
+            }
+            return (lbOK);
+        }
+
+
+        /// <summary>
         /// Metodo que extrae las solicitudes de pago y las inserta en el andamio
         /// </summary>
         public bool extractPagos(ref StringBuilder error)
@@ -1846,8 +2155,153 @@ namespace mIntegracion.Clases
 
 
 
-        #endregion
+        /// <summary>
+        /// Metodo que extrae las solicitudes de pago por descuento de facturas (O/C) y las inserta en el andamio
+        /// </summary>
+        public bool extractPagosOC(ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            DataTable dtDocs, dtPagos = null;
+            string cia = string.Empty;
+            try
+            {
 
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener documentos pendientes de sincronizar
+                dtDocs = getIntDocsCP(transaction);
+
+                foreach (DataRow drDocs in dtDocs.Rows)
+                {
+                    cia = drDocs["CONJUNTO"].ToString();
+
+                    //Obtener la informacion del pago
+                    dtPagos = getPagosCP(transaction, cia
+                                , drDocs["PROVEEDOR"].ToString()
+                                , drDocs["DOCUMENTO"].ToString()
+                                , drDocs["TIPO"].ToString()
+                                , ConfigurationManager.AppSettings["TipoPagoCP_OC"].ToString()
+                                , ConfigurationManager.AppSettings["TipoPagoCP_OC_Subtipo"].ToString() );
+
+                    foreach (DataRow drPago in dtPagos.Rows)
+                    {
+                        //Validar si existen el pago
+                        if (existIntPago(transaction, cia
+                        , drDocs["PROVEEDOR"].ToString()
+                        , drDocs["DOCUMENTO"].ToString()
+                        , drDocs["TIPO"].ToString()
+                        , drPago["DOCUMENTO_DEB"].ToString()
+                        , drPago["TIPO_DEB"].ToString()
+                        ) <= 0)
+                        {
+                            //inserto en el andamio
+                            ok = insIntPagosCP(transaction, cia, drDocs, drPago, ref error);
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[extractPagosOC]: Se presentaron problemas extrayendo pagos:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+        /// <summary>
+        /// Metodo que extrae los pago que fueron anulados y las inserta en el andamio para su resincronizacion
+        /// </summary>
+        public bool extractPagosAnulados(ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            DataTable dtDocs, dtPagos, dtCias = null;
+            string cia = string.Empty;
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener las cias que estan en pagos para su revision
+                dtCias = getCiasIntPagosCP(transaction);
+
+                foreach (DataRow drCia in dtCias.Rows)
+                {
+                    cia = drCia["CONJUNTO"].ToString();
+
+                    //obtener documentos que fueron anulados por cia
+                    dtDocs = getIntPagosCPAnulados(transaction, cia);
+
+                    foreach (DataRow drDocs in dtDocs.Rows)
+                    {                        
+                        //Obtener la informacion del pago
+                        dtPagos = getPagosCP(transaction, cia
+                                    , drDocs["PROVEEDOR"].ToString()
+                                    , drDocs["DOCUMENTO_CRE"].ToString()
+                                    , drDocs["TIPO_CRE"].ToString());
+
+                        foreach (DataRow drPago in dtPagos.Rows)
+                        {
+                            //Validar si existen el pago
+                            if (existIntPago(transaction, cia
+                            , drDocs["PROVEEDOR"].ToString()
+                            , drDocs["DOCUMENTO_CRE"].ToString()
+                            , drDocs["TIPO_CRE"].ToString()
+                            , drPago["DOCUMENTO_DEB"].ToString()
+                            , drPago["TIPO_DEB"].ToString()
+                            ) <= 0)
+                            {
+                                //inserto en el andamio
+                                ok = insIntPagosCP(transaction, cia
+                                    , drDocs["PROVEEDOR"].ToString()
+                                    , drDocs["DOCUMENTO_CRE"].ToString()
+                                    , drDocs["TIPO_CRE"].ToString()
+                                    , drPago
+                                    , ref error);
+                            }
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[extractPagosAnulados]: Se presentaron problemas extrayendo pagos:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+        #endregion
 
 
         #region Sync
@@ -2343,14 +2797,2008 @@ namespace mIntegracion.Clases
         #endregion
 
 
+        #region Asientos
+
+
+        /// <summary>
+        /// Metodo valida si existe el asiento   
+        /// </summary>
+        public int existeAsiento(SqlTransaction transac, string cia, string asiento)
+        {
+
+            int q = 0;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("SELECT COUNT(1) FROM ");
+            sentencia.Append(cia);
+            sentencia.Append(".DIARIO ");
+            sentencia.Append("WHERE ASIENTO = '");
+            sentencia.Append(asiento);
+            sentencia.Append("'");
+
+            q = int.Parse(sqlClass.EjecutarScalar(sentencia.ToString(), transac).ToString());
+
+            return (q);
+        }
+
+
+
+        /// <summary>
+        /// Metodo valida si existe el asiento   
+        /// </summary>
+        public string getAsientoEmbarque(SqlTransaction transac, string cia, string embarque)
+        {
+            DataTable dt = null;
+            string ast = string.Empty;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("SELECT ISNULL(ASIENTO,'') ASIENTO FROM ");
+            sentencia.Append(cia);
+            sentencia.Append(".EMBARQUE ");
+            sentencia.Append("WHERE EMBARQUE = '");
+            sentencia.Append(embarque);
+            sentencia.Append("'");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                ast = dt.Rows[0]["ASIENTO"].ToString();
+            }
+
+            return (ast);
+        }
+
+        /// <summary>
+        /// Metodo valida si existe el asiento   
+        /// </summary>
+        public string getAsientoCP(SqlTransaction transac, string cia, string prov, string doc, string tipo)
+        {
+            DataTable dt = null;
+            string ast = string.Empty;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("SELECT ISNULL(ASIENTO,'') ASIENTO FROM ");
+            sentencia.Append(cia);
+            sentencia.Append(".DOCUMENTOS_CP ");
+            sentencia.Append("WHERE PROVEEDOR = '" + prov + "' ");
+            sentencia.Append("and DOCUMENTO = '" + doc +"' ");
+            sentencia.Append("and TIPO = '" + tipo +"' ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            if (dt != null && dt.Rows.Count > 0)
+            {
+                ast = dt.Rows[0]["ASIENTO"].ToString();
+            }
+
+            return (ast);
+        }
+
+        /// <summary>
+        /// Obtener las OCs pendientes de actualizar    
+        /// </summary>
+        public DataTable getCOAsientos(SqlTransaction transac)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select distinct CONJUNTO, EMBARQUE, ORDEN_COMPRA, ORDEN_SERVICIO ");
+            sentencia.Append("from  ");
+            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(".INT_DOCS_CP ");
+            sentencia.Append("where isnull(ASIENTO_ACT_CO,'N') = 'N'  ");
+            sentencia.Append("order by 1 asc ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// Obtener las OCs pendientes de actualizar    
+        /// </summary>
+        public DataTable getCPAsientos(SqlTransaction transac)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select distinct CONJUNTO, PROVEEDOR, DOCUMENTO, TIPO, ORDEN_SERVICIO ");
+            sentencia.Append("from  ");
+            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(".INT_DOCS_CP ");
+            sentencia.Append("where isnull(ASIENTO_ACT_CP,'N') = 'N'  ");
+            sentencia.Append("order by 1 asc ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+
+        /// <summary>
+        /// Actualizar 
+        /// </summary>
+        public bool updAsiento(SqlTransaction transac, string cia, string asiento, string ordenServicio, ref StringBuilder errores)
+        {
+            bool lbOk = true;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("UPDATE ");
+                sentencia.Append(cia);
+                sentencia.Append(".DIARIO ");
+                sentencia.Append(" SET DOCUMENTO_GLOBAL = CONCAT(DOCUMENTO_GLOBAL, ' CoP:#" + ordenServicio + "') ");
+                sentencia.Append(" , REFERENCIA = CONCAT(REFERENCIA, ' CoP:#" + ordenServicio + "') ");
+                sentencia.Append(" WHERE ASIENTO = '" + asiento + "' ");
+
+                if (sqlClass.EjecutarUpdate(sentencia.ToString(), transac) < 1)
+                {
+                    errores.AppendLine("[updAsiento]: Se presentaron problemas actualizando el ASIENTO: ");
+                    errores.Append(asiento);
+                    lbOk = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[updAsiento]: Detalle Técnico: " + e.Message);
+                lbOk = false;
+            }
+            return lbOk;
+        }
+
+        /// <summary>
+        /// Actualizar 
+        /// </summary>
+        public bool updIntDocCP_Asiento(SqlTransaction transac, string cia, string embarque, string campo, string indProc, ref StringBuilder errores)
+        {
+            bool lbOk = true;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("UPDATE ");
+                sentencia.Append(sqlClass.Compannia);
+                sentencia.Append(".INT_DOCS_CP ");
+                sentencia.Append("SET " + campo + " = '" + indProc + "'");
+                sentencia.Append(" WHERE CONJUNTO = '" + cia + "' ");
+                sentencia.Append("AND EMBARQUE = '" + embarque + "' ");
+
+                if (sqlClass.EjecutarUpdate(sentencia.ToString(), transac) < 1)
+                {
+                    errores.AppendLine("[updIntDocCP_Asiento]: Se presentaron problemas actualizando el doc en la tabla intermedia: ");
+                    errores.Append(embarque);
+                    lbOk = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[updIntDocCP_Asiento]: Detalle Técnico: " + e.Message);
+                lbOk = false;
+            }
+            return lbOk;
+        }
+
+
+        /// <summary>
+        /// Actualizar 
+        /// </summary>
+        public bool updIntDocCP_Asiento(SqlTransaction transac, string cia, string prov, string doc, string tipo, string campo, string indProc, ref StringBuilder errores)
+        {
+            bool lbOk = true;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("UPDATE ");
+                sentencia.Append(sqlClass.Compannia);
+                sentencia.Append(".INT_DOCS_CP ");
+                sentencia.Append("SET " + campo + " = '" + indProc + "'");
+                sentencia.Append(" WHERE CONJUNTO = '" + cia + "' ");
+                sentencia.Append("AND PROVEEDOR = '" + prov + "' ");
+                sentencia.Append("AND DOCUMENTO = '" + doc + "' ");
+                sentencia.Append("AND TIPO = '" + tipo + "' ");
+
+
+                if (sqlClass.EjecutarUpdate(sentencia.ToString(), transac) < 1)
+                {
+                    errores.AppendLine("[updIntDocCP_Asiento]: Se presentaron problemas actualizando el doc en la tabla intermedia: ");
+                    errores.Append(doc);
+                    lbOk = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[updIntDocCP_Asiento]: Detalle Técnico: " + e.Message);
+                lbOk = false;
+            }
+            return lbOk;
+        }
+
+        /// <summary>
+        /// Metodo que revisa los documentos del andamio y actualiza los asientos con la informacion de CoP
+        /// </summary>
+        public bool actualizaOCAsientos(ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            DataTable dtDocs = null;
+            string cia, ast = string.Empty;
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener los documentos pendientes de actualizar asientos
+                dtDocs = getCOAsientos(transaction);
+
+                foreach (DataRow drDocs in dtDocs.Rows)
+                {
+                    cia = drDocs["CONJUNTO"].ToString();
+
+                    //validar que la OC tenga embarque generado
+                    if (drDocs["EMBARQUE"].ToString().CompareTo(string.Empty) != 0)
+                    {
+                        //existe el asiento en auxiliar
+                        ast = getAsientoEmbarque(transaction, cia, drDocs["EMBARQUE"].ToString());
+
+                        if (ast.CompareTo(string.Empty) != 0)
+                        {
+                            //existe asiento en el diario
+                            if (existeAsiento(transaction, cia, ast) > 0)
+                            {
+                                //actualiza asiento en el diario
+                                ok = updAsiento(transaction, cia, ast, drDocs["ORDEN_SERVICIO"].ToString(), ref error);
+
+                                if (ok)
+                                {
+                                    //actualizar el andamio
+                                    ok = updIntDocCP_Asiento(transaction, cia, drDocs["EMBARQUE"].ToString(), "ASIENTO_ACT_CO", "S", ref error);
+                                }
+                            }
+                            else
+                            {
+                                //asiento ya fue mayorizado
+                                //actualizar el andamio
+                                ok = updIntDocCP_Asiento(transaction, cia, drDocs["EMBARQUE"].ToString(), "ASIENTO_ACT_CO", "S", ref error);
+                            }
+                        }
+
+                        if (!ok)
+                            break;
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[actualizaOCAsientos]: Se presentaron problemas actualizando los asientos:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+        /// <summary>
+        /// Metodo que revisa los documentos del andamio y actualiza los asientos con la informacion de CoP
+        /// </summary>
+        public bool actualizaCPAsientos(ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            DataTable dtDocs = null;
+            string cia, ast = string.Empty;
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener los documentos pendientes de actualizar asientos
+                dtDocs = getCPAsientos(transaction);
+
+                foreach (DataRow drDocs in dtDocs.Rows)
+                {
+                    cia = drDocs["CONJUNTO"].ToString();
+
+                    //existe el asiento en auxiliar
+                    ast = getAsientoCP(transaction, cia, drDocs["PROVEEDOR"].ToString(), drDocs["DOCUMENTO"].ToString(), drDocs["TIPO"].ToString());
+
+                    if (ast.CompareTo(string.Empty) != 0)
+                    {
+                        //existe asiento en el diario
+                        if (existeAsiento(transaction, cia, ast) > 0)
+                        {
+                            //actualiza asiento en el diario
+                            ok = updAsiento(transaction, cia, ast, drDocs["ORDEN_SERVICIO"].ToString(), ref error);
+
+                            if (ok)
+                            {
+                                //actualizar el andamio
+                                ok = updIntDocCP_Asiento(transaction, cia, drDocs["PROVEEDOR"].ToString(), drDocs["DOCUMENTO"].ToString(), drDocs["TIPO"].ToString(), "ASIENTO_ACT_CP", "S", ref error);
+                            }
+                        }
+                        else
+                        {
+                            //asiento ya fue mayorizado
+                            //actualizar el andamio
+                            ok = updIntDocCP_Asiento(transaction, cia, drDocs["PROVEEDOR"].ToString(), drDocs["DOCUMENTO"].ToString(), drDocs["TIPO"].ToString(), "ASIENTO_ACT_CP", "S", ref error);
+                        }
+                    }
+
+                    if (!ok)
+                        break;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[actualizaCPAsientos]: Se presentaron problemas actualizando los asientos:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+        /// <summary>
+        /// Metodo que revisa los documentos del andamio y actualiza los asientos con la informacion de CoP
+        /// </summary>
+        public bool actualizaPagosAsientos(ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            DataTable dtDocs = null;
+            string cia, ast = string.Empty;
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener los documentos pendientes de actualizar asientos
+                dtDocs = getCPAsientos(transaction);
+
+                foreach (DataRow drDocs in dtDocs.Rows)
+                {
+                    cia = drDocs["CONJUNTO"].ToString();
+
+                    //existe el asiento en auxiliar
+                    ast = getAsientoCP(transaction, cia, drDocs["PROVEEDOR"].ToString(), drDocs["DOCUMENTO"].ToString(), drDocs["TIPO"].ToString());
+
+                    if (ast.CompareTo(string.Empty) != 0)
+                    {
+                        //existe asiento en el diario
+                        if (existeAsiento(transaction, cia, ast) > 0)
+                        {
+                            //actualiza asiento en el diario
+                            ok = updAsiento(transaction, cia, ast, drDocs["ORDEN_SERVICIO"].ToString(), ref error);
+
+                            if (ok)
+                            {
+                                //actualizar el andamio
+                                ok = updIntDocCP_Asiento(transaction, cia, drDocs["PROVEEDOR"].ToString(), drDocs["DOCUMENTO"].ToString(), drDocs["TIPO"].ToString(), "ASIENTO_ACT_CP", "S", ref error);
+                            }
+                        }
+                        else
+                        {
+                            //asiento ya fue mayorizado
+                            //actualizar el andamio
+                            ok = updIntDocCP_Asiento(transaction, cia, drDocs["PROVEEDOR"].ToString(), drDocs["DOCUMENTO"].ToString(), drDocs["TIPO"].ToString(), "ASIENTO_ACT_CP", "S", ref error);
+                        }
+                    }
+
+                    if (!ok)
+                        break;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[actualizaCPAsientos]: Se presentaron problemas actualizando los asientos:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+        #endregion Asientos
+
+
+        #region FACTURAS_PAGADAS_COBRADAS
+
+
+        /// <summary>
+        /// --Obtener las cias en el andamio      
+        /// </summary>
+        public DataTable getCias(SqlTransaction transac)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select distinct c.CONJUNTO ");
+            sentencia.Append("from  ");            
+            sentencia.Append("erpadmin");
+            sentencia.Append(".CONJUNTO c inner join ");
+            sentencia.Append(ciaPrin);
+            sentencia.Append(".ZONAS_CIAS z on c.CONJUNTO = z.CONJUNTO ");
+            sentencia.Append("where z.COP_OP = 'S' ");                    
+            
+            //sentencia.Append("where c.CONJUNTO = 'CON102AE'");                       
+
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// Metodo encargado de insertar movs factura cobradados y pagados
+        /// </summary>
+        public bool insIntMovsFact(SqlTransaction transac, string cia, DataRow doc, string tipo, ref StringBuilder errores)
+        {
+
+            bool lbOK = true;
+            SqlCommand cmd = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("INSERT INTO ");
+                sentencia.Append(ciaPrin);
+                sentencia.Append(".INT_MOVS_FACT ");
+                sentencia.Append("(CONJUNTO,TIPO,MONTO,FECHA,MES,ANNO,MONTOCOL,MONTODOL,TIPOCAMBIO,IND_PROCESO,IND_SINCRO");                
+                sentencia.Append(") VALUES (");
+                sentencia.Append("@CONJUNTO,@TIPO,@MONTO,@FECHA,@MES,@ANNO,@MONTOCOL,@MONTODOL,@TIPOCAMBIO,@IND_PROCESO,@IND_SINCRO");
+                sentencia.Append(")");
+
+                //seteo el command
+                cmd = sqlClass.SQLCon.CreateCommand();
+                cmd.Transaction = transac;
+                cmd.CommandText = sentencia.ToString();
+
+                //seteo los parametros  
+                cmd.Parameters.Add("@CONJUNTO   ", SqlDbType.VarChar, 10).Value = cia;
+                cmd.Parameters.Add("@TIPO       ", SqlDbType.VarChar, 1).Value = tipo;
+                cmd.Parameters.Add("@MONTO      ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["MONTOCOL"]);
+                cmd.Parameters.Add("@FECHA      ", SqlDbType.DateTime, 10).Value = Convert.ToDateTime(doc["FECHA"]);
+                cmd.Parameters.Add("@MES        ", SqlDbType.VarChar, 2).Value = doc["MES"].ToString();
+                cmd.Parameters.Add("@ANNO       ", SqlDbType.VarChar, 10).Value = doc["ANNO"].ToString();
+                cmd.Parameters.Add("@MONTOCOL   ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["MONTOCOL"]);
+                cmd.Parameters.Add("@MONTODOL   ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["MONTODOL"]);
+                cmd.Parameters.Add("@TIPOCAMBIO ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["TIPO_CAMBIO"]);
+                cmd.Parameters.Add("@IND_PROCESO", SqlDbType.VarChar, 1).Value = "P";
+                cmd.Parameters.Add("@IND_SINCRO ", SqlDbType.VarChar, 1).Value = "P";
+
+                if (cmd.ExecuteNonQuery() < 1)
+                {
+                    errores.AppendLine("[insIntMovsFact]: Se presentaron problemas insertando INT_MOVS_FACT: " + cia);                    
+                    lbOK = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[insIntMovsFact]: Detalle Técnico: " + e.Message);
+                lbOK = false;
+            }
+            finally
+            {
+                cmd.Dispose();
+                cmd = null;
+            }
+            return (lbOK);
+        }
 
 
 
 
+        /// <summary>
+        /// Metodo que extrae las facturas generadas por las cias en un periodo de tiempo
+        /// </summary>
+        public bool extractFacturas(DateTime fInicio, DateTime fFin, ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            string prov = string.Empty, docu = string.Empty, tipo = string.Empty;
+            DataTable dtCia, dtDocs = null;
+
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener cias en el andamio
+                dtCia = getCias(transaction);
+                string cia = string.Empty;
+
+                foreach (DataRow drCia in dtCia.Rows)
+                {
+                    cia = drCia["CONJUNTO"].ToString();
+
+                    //Obtener las facturas cobradas en el periodo de tiempo
+                    dtDocs = getFacturas(transaction, cia, fInicio, fFin);
+
+                    if (dtDocs.Rows.Count > 0)
+                    {
+                        foreach (DataRow drDoc in dtDocs.Rows)
+                        {
+                            //inserto en el andamio
+                            ok = insIntMovsFact(transaction, cia, drDoc, "F", ref error);
+
+                            if (!ok)
+                                break;
+                        }
+                    }
+
+                    if (!ok)
+                        break;
+                    
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[extractFacturasCobradas]: Se presentaron problemas extrayendo facturas cobradas:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+        /// <summary>
+        /// Obtener las factura cobradas en la cia
+        /// </summary>
+        public DataTable getFacturas(SqlTransaction transac, string cia, DateTime fcInicio, DateTime fcFin)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select SUM(CASE WHEN MONEDA_FACTURA = 'L' THEN (TOTAL_FACTURA) WHEN MONEDA_FACTURA = 'D' THEN TOTAL_FACTURA * TIPO_CAMBIO END ) MONTOCOL  ");
+            sentencia.Append(", SUM(CASE WHEN MONEDA_FACTURA = 'D' THEN (TOTAL_FACTURA) WHEN MONEDA_FACTURA = 'L' THEN TOTAL_FACTURA / TIPO_CAMBIO END ) MONTODOL");
+            sentencia.Append(", AVG(TIPO_CAMBIO) TIPO_CAMBIO ");
+            sentencia.Append(", MAX(FECHA) FECHA, DATEPART(MONTH, MAX(FECHA)) MES, DATEPART(YEAR, MAX(FECHA)) ANNO ");
+            sentencia.Append("from  ");
+            sentencia.Append(cia);
+            sentencia.Append(".FACTURA  ");
+            sentencia.Append("where TIPO_DOCUMENTO = 'F' and ANULADA = 'N' ");           
+
+            if ((fcInicio.ToString("yyyy").CompareTo("0001") != 0) && (fcFin.ToString("yyyy").CompareTo("0001") != 0))
+            {
+                sentencia.Append(" and FECHA between '");
+                sentencia.Append(fcInicio.ToString("yyyy-MM-dd"));
+                sentencia.Append("' and '");
+                sentencia.Append(fcFin.ToString("yyyy-MM-dd"));
+                sentencia.Append("' ");
+
+                //sentencia.Append(" and FECHA >= '" + fcInicio.ToString("yyyy-MM-dd") + "'");
+                //sentencia.Append(" and FECHA <= '" + fcFin.ToString("yyyy-MM-dd") + "'");
+            }
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+        /// <summary>
+        /// Obtener las factura cobradas en la cia
+        /// </summary>
+        public DataTable getFacturasCobradas(SqlTransaction transac, string cia, DateTime fcInicio, DateTime fcFin)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select SUM(CASE WHEN f.MONEDA_FACTURA = 'L' THEN (f.TOTAL_FACTURA) WHEN f.MONEDA_FACTURA = 'D' THEN f.TOTAL_FACTURA * f.TIPO_CAMBIO END ) MONTOCOL  ");
+            sentencia.Append(", SUM(CASE WHEN f.MONEDA_FACTURA = 'D' THEN (f.TOTAL_FACTURA) WHEN f.MONEDA_FACTURA = 'L' THEN f.TOTAL_FACTURA / f.TIPO_CAMBIO END ) MONTODOL");
+            sentencia.Append(", AVG(f.TIPO_CAMBIO) TIPO_CAMBIO ");
+            sentencia.Append(", MAX(f.FECHA) FECHA, DATEPART(MONTH, MAX(f.FECHA)) MES, DATEPART(YEAR, MAX(f.FECHA)) ANNO ");
+            sentencia.Append("from  ");
+            sentencia.Append(cia);
+            sentencia.Append(".FACTURA f inner join ");
+            sentencia.Append(cia);
+            sentencia.Append(".DOCUMENTOS_CC cc on f.FACTURA = cc.DOCUMENTO  ");
+            sentencia.Append("where f.TIPO_DOCUMENTO = 'F' and f.ANULADA = 'N' ");
+
+            if ((fcInicio.ToString("yyyy").CompareTo("0001") != 0) && (fcFin.ToString("yyyy").CompareTo("0001") != 0))
+            {
+                sentencia.Append(" and f.FECHA between '");
+                sentencia.Append(fcInicio.ToString("yyyy-MM-dd"));
+                sentencia.Append("' and '");
+                sentencia.Append(fcFin.ToString("yyyy-MM-dd"));
+                sentencia.Append("' ");
+
+                //sentencia.Append(" and FECHA >= '" + fcInicio.ToString("yyyy-MM-dd") + "'");
+                //sentencia.Append(" and FECHA <= '" + fcFin.ToString("yyyy-MM-dd") + "'");
+            }
+
+            sentencia.Append(" and cc.SALDO <= 0 ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// Metodo que extrae las facturas generadas por las cias en un periodo de tiempo
+        /// </summary>
+        public bool extractFacturasPagadas(DateTime fInicio, DateTime fFin, ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            string prov = string.Empty, docu = string.Empty, tipo = string.Empty;
+            DataTable dtCia, dtDocs = null;
+
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener cias en el andamio
+                dtCia = getCias(transaction);
+                string cia = string.Empty;
+
+                foreach (DataRow drCia in dtCia.Rows)
+                {
+                    cia = drCia["CONJUNTO"].ToString();
+
+                    //Obtener las facturas cobradas en el periodo de tiempo
+                    dtDocs = getFacturasCobradas(transaction, cia, fInicio, fFin);
+
+                    if (dtDocs.Rows.Count > 0)
+                    {
+                        foreach (DataRow drDoc in dtDocs.Rows)
+                        {
+                            //inserto en el andamio
+                            ok = insIntMovsFact(transaction, cia, drDoc, "C", ref error);
+
+                            if (!ok)
+                                break;
+                        }
+                    }
+
+                    if (!ok)
+                        break;
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[extractFacturasCobradas]: Se presentaron problemas extrayendo facturas cobradas:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+
+        /// <summary>
+        /// Metodo encargado de extraer facturas      
+        /// </summary>
+        public DataTable getFacturasSync(SqlTransaction transac)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select ");
+            sentencia.Append("  MONTO monto			 ");
+            sentencia.Append(", CONJUNTO compania	 ");
+            sentencia.Append(", FECHA fecha			 ");
+            sentencia.Append(", MES mes				 ");
+            sentencia.Append(", ANNO anno			 ");
+            sentencia.Append(", MONTOCOL montocol	 ");
+            sentencia.Append(", MONTODOL montodol	 ");
+            sentencia.Append(", TIPOCAMBIO tipocambio");
+            sentencia.Append(", TIPO tipo			 ");
+            sentencia.Append("from  ");
+            sentencia.Append(sqlClass.Compannia);
+            sentencia.Append(".INT_MOVS_FACT ");
+            sentencia.Append("where IND_PROCESO = 'P' ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// Actualizar 
+        /// </summary>
+        public bool updIntFacturas(SqlTransaction transac, string cia, string tipo, string indProc, string mensaje, ref StringBuilder errores)
+        {
+            bool lbOk = true;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("UPDATE ");
+                sentencia.Append(sqlClass.Compannia);
+                sentencia.Append(".INT_MOVS_FACT ");
+                sentencia.Append("SET IND_PROCESO = '" + indProc + "'");
+                sentencia.Append(", MENSAJE = '" + mensaje + "'");
+                sentencia.Append(" WHERE CONJUNTO = '" + cia + "'");
+                //sentencia.Append(" and ID = " + id.ToString());
+                sentencia.Append(" and TIPO = '" + tipo + "'");
+
+                if (sqlClass.EjecutarUpdate(sentencia.ToString(), transac) < 1)
+                {
+                    errores.AppendLine("[updIntFacturas]: Se presentaron problemas actualizando en la tabla intermedia: ");
+                    errores.Append(cia  + tipo);
+                    lbOk = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[updIntFacturas]: Detalle Técnico: " + e.Message);
+                lbOk = false;
+            }
+            return lbOk;
+        }
+
+
+        /// <summary>
+        /// Metodo que sincroniza las facturas 
+        /// </summary>
+        public bool syncFacturasOpe(string url, string ck, string cs, ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            DataTable dtProv = null;
+            StringBuilder json = new StringBuilder();
+            jsonHandler j = new jsonHandler();
+
+            int p = 0;
+
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener companias a sync
+                dtProv = getFacturasSync(transaction);
+
+                while (p < dtProv.Rows.Count)
+                {
+                    //obtener encabezado
+                    json.Append(j.getHeader(ck, cs, "facturaspago"));
+
+                    //abrir arreglo de docs
+                    json.Append(j.getOpenArray());
+
+                    //obtener json de la cia
+                    json.Append(j.DataRowToJson(dtProv, p));
+
+                    //cerrar array
+                    json.Append(j.getCloseArray());
+
+                    //obtener footer
+                    json.Append(j.getFooter());
+
+                    //sync
+                    var client = new RestClient(url);
+                    var request = new RestRequest(Method.POST);
+                    request.AddParameter("application/json", json.ToString(), ParameterType.RequestBody);
+                    IRestResponse response = client.Execute(request);
+
+                    //revisar respuesta
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        responseHandlerPagos r = JsonConvert.DeserializeObject<responseHandlerPagos>(response.Content);
+
+                        //revisar respuesta exitosa
+                        if (r.recordID.Count > 0)
+                        {
+                            int q = 0;
+                            while (q < r.recordID.Count)
+                            {
+                                //string[] doc = r.recordID[q].idpago.Split('|');
+
+                                //actualizo pago en andamio
+                                ok = updIntFacturas(transaction
+                                    , dtProv.Rows[p]["compania"].ToString()
+                                    , dtProv.Rows[p]["tipo"].ToString()
+                                    , "S"
+                                    , "idpago: " + r.recordID[q].idpago + " | record: " + r.recordID[q].record
+                                    , ref error);
+
+                                if (!ok)
+                                    break;
+
+                                q++;
+                            }
+                        }
+
+                        //revisar la respuesta con error
+                        if (r.Reason.Count > 0)
+                        {
+                            int q = 0;
+                            while (q < r.Reason.Count)
+                            {
+                                //string[] doc = r.Reason[q].idpago.Split('|');
+
+                                //actualizo pago en andamio
+                                ok = updIntFacturas(transaction
+                                    , dtProv.Rows[p]["compania"].ToString()
+                                    , dtProv.Rows[p]["tipo"].ToString()
+                                    , "E"
+                                    , "idpago: " + r.recordID[q].idpago + " | record: " + r.recordID[q].record + " | error: " + r.Reason[q].error
+                                    , ref error);
+
+                                if (!ok)
+                                    break;
+
+                                q++;
+
+                            }
+                        }
+                    }
+                    else
+                    {
+                        //No se pudo hacer el request, no hay catch y se intenta de nuevo en la siguiente corrida
+                    }
+
+                    //sgt cia - limpiar variables
+                    p++;
+                    json.Clear();
+                }
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[syncProveedores]: Se presentaron problemas sincronizando proveedores:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
 
 
 
 
+        #endregion FACTURAS_PAGADAS_COBRADAS
+
+
+        #region NOMINA
+
+        /// <summary>
+        /// Metodo que extrae los pagos de nomina
+        /// </summary>
+        public bool extractNomina(DateTime fInicio, DateTime fFin, string nomina, ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            string asiento = string.Empty;
+            DataTable dtCia, dtDocs, dtTotal = null;
+            int linea = 0;
+            Int64 id = 0;
+
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener el ultimo ID
+                id = getUltMovPresup(transaction);
+
+                //obtener cias en el andamio
+                dtCia = getCias(transaction);
+                string cia = string.Empty;
+
+                foreach (DataRow drCia in dtCia.Rows)
+                {
+                    cia = drCia["CONJUNTO"].ToString();                   
+
+                    //Obtener ult asiento de nomina
+                    asiento = nom.getUltimaNominaAsiento(transaction, cia, nomina, fInicio, fFin);
+
+                    if (asiento.CompareTo(string.Empty) != 0)
+                    {
+                        //obtener totales del asiento nomina
+                        dtTotal = getAsientoNominaConcepTotal(transaction, cia, asiento);
+
+                        if (dtTotal.Rows.Count > 0)
+                        {                           
+
+                            foreach (DataRow dr in dtTotal.Rows)
+                            {
+                                //inserto en el andamio
+                                ok = insIntMovsPresup(transaction, cia, id, dr, "N", "NOM"
+                                    , "Nomina " + cia + " | " + dr["MES"].ToString() + "-" + dr["ANNO"].ToString() + " | " + dr["FUENTE"].ToString() + " | " + dr["ASIENTO"].ToString()
+                                    , ref error);
+
+                                if (!ok)
+                                    break;
+                            }
+
+                            if (ok)
+                            {
+                                //linea de detalle
+                                linea = 1;
+
+                                //Obtener la nomina detallada
+                                dtDocs = getAsientoNominaConcep(transaction, cia, asiento);
+
+                                if (dtDocs.Rows.Count > 0)
+                                {
+                                    foreach (DataRow drDoc in dtDocs.Rows)
+                                    {
+                                        //inserto en el andamio
+                                        ok = insIntMovsPresupDet(transaction, cia, id, drDoc, linea, ref error);
+
+                                        linea++;
+
+                                        if (!ok)
+                                            break;
+                                    }
+                                }
+                            }
+
+                            //sgt documento
+                            id++;
+                        }                        
+
+                    }
+
+                    if (!ok)
+                        break;
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[extractNomina]: Se presentaron problemas extrayendo nomina:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+
+        /// <summary>
+        /// Obtener las asiento nomina por concepto
+        /// </summary>
+        public DataTable getAsientoNominaConcep(SqlTransaction transac, string cia, string asiento)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select ");
+            sentencia.Append("  m.ASIENTO ");
+            sentencia.Append(", m.CENTRO_COSTO ");
+            sentencia.Append(", m.CUENTA_CONTABLE ");
+            sentencia.Append(", max(m.FECHA) FECHA ");
+            sentencia.Append(", max(m.FUENTE) FUENTE ");
+            sentencia.Append(", max(m.REFERENCIA) REFERENCIA ");
+            sentencia.Append(", sum((isnull(m.DEBITO_LOCAL,0))) MONTO_LOCAL ");
+            sentencia.Append(", sum((isnull(m.DEBITO_DOLAR,0))) MONTO_DOLAR ");
+            sentencia.Append(", c.CONCEPTO ");
+            sentencia.Append(", max(c.DESCRIPCION) DESCRIPCION ");
+            sentencia.Append(", max(m.FUENTE) + ' - ' + max(c.DESCRIPCION) LINEA_DESC ");
+            sentencia.Append(" from  ");
+            sentencia.Append(cia);
+            sentencia.Append(".MAYOR m left join  ");
+            sentencia.Append(cia);
+            sentencia.Append(".CONCEPTO c on SUBSTRING(m.FUENTE, len(m.FUENTE)-3, 4) = c.CONCEPTO ");
+            sentencia.Append("where m.ASIENTO = '" + asiento + "' ");
+            sentencia.Append("and c.CONCEPTO is not null ");
+            sentencia.Append("and c.U_USA_CONCEP_OPERATIVO = 'S' ");
+            sentencia.Append("and m.CREDITO_LOCAL is null ");
+            sentencia.Append("group by m.ASIENTO, m.CENTRO_COSTO, m.CUENTA_CONTABLE, c.CONCEPTO ");
+            sentencia.Append("order by CONCEPTO asc ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// Obtener las asiento de nomina total
+        /// </summary>
+        public DataTable getAsientoNominaConcepTotal(SqlTransaction transac, string cia, string asiento)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select m.ASIENTO ");
+            sentencia.Append(", max(m.FECHA) FECHA  ");
+            sentencia.Append(", DATEPART(MONTH, MAX(m.FECHA)) MES ");
+            sentencia.Append(", DATEPART(YEAR, MAX(m.FECHA)) ANNO ");
+            sentencia.Append(", substring(max(m.FUENTE), 0, len(max(m.FUENTE))-3)  FUENTE  ");
+            sentencia.Append(", sum((isnull(m.DEBITO_LOCAL,0))) MONTO_LOCAL ");
+            sentencia.Append(", sum((isnull(m.DEBITO_DOLAR,0))) MONTO_DOLAR ");
+            sentencia.Append(", sum((isnull(m.DEBITO_LOCAL,0))) / sum((isnull(m.DEBITO_DOLAR,0)))  TIPO_CAMBIO ");
+            sentencia.Append(" from ");
+            sentencia.Append(cia);
+            sentencia.Append(".MAYOR m left join  ");
+            sentencia.Append(cia);
+            sentencia.Append(".CONCEPTO c on SUBSTRING(m.FUENTE, len(m.FUENTE)-3, 4) = c.CONCEPTO ");
+            sentencia.Append("where m.ASIENTO = '" + asiento + "' ");
+            sentencia.Append("and c.CONCEPTO is not null ");
+            sentencia.Append("and c.U_USA_CONCEP_OPERATIVO = 'S' ");
+            sentencia.Append("and m.CREDITO_LOCAL is null ");
+            sentencia.Append("group by m.ASIENTO ");            
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+
+        /// <summary>
+        /// Metodo encargado de insertar movs de presupuesto
+        /// </summary>
+        public bool insIntMovsPresup(SqlTransaction transac, string cia, Int64 id, DataRow doc, string tipo, string documento, string descripcion, ref StringBuilder errores)
+        {
+
+            bool lbOK = true;
+            SqlCommand cmd = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("INSERT INTO ");
+                sentencia.Append(ciaPrin);
+                sentencia.Append(".INT_MOVS_PRESUP ");
+                sentencia.Append("(CONJUNTO,DOCUMENTO,FECHA,MES,ANNO,DESCRIPCION,MONTO,MONTOCOL,MONTODOL,TIPOCAMBIO,IND_PROCESO,IND_SINCRO,TIPO,ID");
+                sentencia.Append(") VALUES (");
+                sentencia.Append("@CONJUNTO,@DOCUMENTO,@FECHA,@MES,@ANNO,@DESCRIPCION,@MONTO,@MONTOCOL,@MONTODOL,@TIPOCAMBIO,@IND_PROCESO,@IND_SINCRO,@TIPO,@ID");
+                sentencia.Append(")");
+
+                //seteo el command
+                cmd = sqlClass.SQLCon.CreateCommand();
+                cmd.Transaction = transac;
+                cmd.CommandText = sentencia.ToString();
+
+                //seteo los parametros  
+                cmd.Parameters.Add("@ID   ", SqlDbType.BigInt).Value = id;
+                cmd.Parameters.Add("@DOCUMENTO  ", SqlDbType.VarChar, 20).Value = documento;
+                cmd.Parameters.Add("@DESCRIPCION", SqlDbType.VarChar, 250).Value = descripcion;
+                cmd.Parameters.Add("@CONJUNTO   ", SqlDbType.VarChar, 10).Value = cia;
+                cmd.Parameters.Add("@TIPO       ", SqlDbType.VarChar, 1).Value = tipo;               
+                cmd.Parameters.Add("@FECHA      ", SqlDbType.DateTime, 10).Value = Convert.ToDateTime(doc["FECHA"]);
+                cmd.Parameters.Add("@MES        ", SqlDbType.VarChar, 2).Value = doc["MES"].ToString();
+                cmd.Parameters.Add("@ANNO       ", SqlDbType.VarChar, 10).Value = doc["ANNO"].ToString();
+                cmd.Parameters.Add("@MONTO      ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["MONTO_LOCAL"]);
+                cmd.Parameters.Add("@MONTOCOL   ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["MONTO_LOCAL"]);
+                cmd.Parameters.Add("@MONTODOL   ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["MONTO_DOLAR"]);
+                cmd.Parameters.Add("@TIPOCAMBIO ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["TIPO_CAMBIO"]);
+                cmd.Parameters.Add("@IND_PROCESO", SqlDbType.VarChar, 1).Value = "P";
+                cmd.Parameters.Add("@IND_SINCRO ", SqlDbType.VarChar, 1).Value = "P";
+                
+
+                if (cmd.ExecuteNonQuery() < 1)
+                {
+                    errores.AppendLine("[insIntMovsPresup]: Se presentaron problemas insertando INT_MOVS_PRESUP: " + cia);
+                    lbOK = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[insIntMovsPresup]: Detalle Técnico: " + e.Message);
+                lbOK = false;
+            }
+            finally
+            {
+                cmd.Dispose();
+                cmd = null;
+            }
+            return (lbOK);
+        }
+
+
+        /// <summary>
+        /// Metodo encargado de insertar movs de presupuesto
+        /// </summary>
+        public bool insIntMovsPresup(SqlTransaction transac, string cia, Int64 id, string tipo, string documento, string descripcion
+            , DateTime fecha, decimal montoLoc, decimal montoDol, decimal TC
+            , ref StringBuilder errores)
+        {
+
+            bool lbOK = true;
+            SqlCommand cmd = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("INSERT INTO ");
+                sentencia.Append(ciaPrin);
+                sentencia.Append(".INT_MOVS_PRESUP ");
+                sentencia.Append("(CONJUNTO,DOCUMENTO,FECHA,MES,ANNO,DESCRIPCION,MONTO,MONTOCOL,MONTODOL,TIPOCAMBIO,IND_PROCESO,IND_SINCRO,TIPO,ID");
+                sentencia.Append(") VALUES (");
+                sentencia.Append("@CONJUNTO,@DOCUMENTO,@FECHA,@MES,@ANNO,@DESCRIPCION,@MONTO,@MONTOCOL,@MONTODOL,@TIPOCAMBIO,@IND_PROCESO,@IND_SINCRO,@TIPO,@ID");
+                sentencia.Append(")");
+
+                //seteo el command
+                cmd = sqlClass.SQLCon.CreateCommand();
+                cmd.Transaction = transac;
+                cmd.CommandText = sentencia.ToString();
+
+                //seteo los parametros  
+                cmd.Parameters.Add("@ID   ", SqlDbType.BigInt).Value = id;
+                cmd.Parameters.Add("@DOCUMENTO  ", SqlDbType.VarChar, 20).Value = documento;
+                cmd.Parameters.Add("@DESCRIPCION", SqlDbType.VarChar, 250).Value = descripcion;
+                cmd.Parameters.Add("@CONJUNTO   ", SqlDbType.VarChar, 10).Value = cia;
+                cmd.Parameters.Add("@TIPO       ", SqlDbType.VarChar, 1).Value = tipo;
+                cmd.Parameters.Add("@FECHA      ", SqlDbType.DateTime, 10).Value = fecha ;
+                cmd.Parameters.Add("@MES        ", SqlDbType.VarChar, 2).Value = fecha.ToString("MM");
+                cmd.Parameters.Add("@ANNO       ", SqlDbType.VarChar, 10).Value = fecha.ToString("yyyy");
+                cmd.Parameters.Add("@MONTO      ", SqlDbType.Decimal).Value = montoLoc;
+                cmd.Parameters.Add("@MONTOCOL   ", SqlDbType.Decimal).Value = montoLoc;
+                cmd.Parameters.Add("@MONTODOL   ", SqlDbType.Decimal).Value = montoDol;
+                cmd.Parameters.Add("@TIPOCAMBIO ", SqlDbType.Decimal).Value = TC;
+                cmd.Parameters.Add("@IND_PROCESO", SqlDbType.VarChar, 1).Value = "P";
+                cmd.Parameters.Add("@IND_SINCRO ", SqlDbType.VarChar, 1).Value = "P";
+
+
+                if (cmd.ExecuteNonQuery() < 1)
+                {
+                    errores.AppendLine("[insIntMovsPresup]: Se presentaron problemas insertando INT_MOVS_PRESUP: " + cia);
+                    lbOK = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[insIntMovsPresup]: Detalle Técnico: " + e.Message);
+                lbOK = false;
+            }
+            finally
+            {
+                cmd.Dispose();
+                cmd = null;
+            }
+            return (lbOK);
+        }
+
+
+        /// <summary>
+        /// Metodo encargado de insertar movs de presupuesto
+        /// </summary>
+        public bool insIntMovsPresupDet(SqlTransaction transac, string cia, Int64 id, DataRow doc, int linea, ref StringBuilder errores)
+        {
+
+            bool lbOK = true;
+            SqlCommand cmd = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("INSERT INTO ");
+                sentencia.Append(ciaPrin);
+                sentencia.Append(".INT_MOVS_PRESUP_DET ");
+                sentencia.Append("(CONJUNTO,ID,LINEA,CENTRO_COSTO,CUENTA_CONTABLE,DESCRIPCION,MONTOCOL,MONTODOL,NOTAS");
+                sentencia.Append(") VALUES (");
+                sentencia.Append("@CONJUNTO,@ID,@LINEA,@CENTRO_COSTO,@CUENTA_CONTABLE,@DESCRIPCION,@MONTOCOL,@MONTODOL,@NOTAS");
+                sentencia.Append(")");
+
+                //seteo el command
+                cmd = sqlClass.SQLCon.CreateCommand();
+                cmd.Transaction = transac;
+                cmd.CommandText = sentencia.ToString();
+
+                //seteo los parametros  
+                cmd.Parameters.Add("@CONJUNTO   ", SqlDbType.VarChar, 10).Value = cia;
+                cmd.Parameters.Add("@ID   ", SqlDbType.BigInt).Value = id;
+                cmd.Parameters.Add("@LINEA          ", SqlDbType.Int).Value = linea;
+                cmd.Parameters.Add("@CENTRO_COSTO   ", SqlDbType.VarChar, 25).Value = doc["CENTRO_COSTO"].ToString();
+                cmd.Parameters.Add("@CUENTA_CONTABLE", SqlDbType.VarChar, 25).Value = doc["CUENTA_CONTABLE"].ToString();
+                cmd.Parameters.Add("@DESCRIPCION    ", SqlDbType.VarChar, 500).Value = doc["LINEA_DESC"].ToString();
+                cmd.Parameters.Add("@NOTAS          ", SqlDbType.VarChar, 1000).Value = string.Empty;                
+                cmd.Parameters.Add("@MONTOCOL   ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["MONTO_LOCAL"]);
+                cmd.Parameters.Add("@MONTODOL   ", SqlDbType.Decimal).Value = Convert.ToDecimal(doc["MONTO_DOLAR"]);                
+
+                if (cmd.ExecuteNonQuery() < 1)
+                {
+                    errores.AppendLine("[insIntMovsPresupDet]: Se presentaron problemas insertando INT_MOVS_PRESUP_DET: " + cia);
+                    lbOK = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[insIntMovsPresupDet]: Detalle Técnico: " + e.Message);
+                lbOK = false;
+            }
+            finally
+            {
+                cmd.Dispose();
+                cmd = null;
+            }
+            return (lbOK);
+        }
+
+
+
+        /// <summary>
+        /// Metodo encargado de insertar movs de presupuesto
+        /// </summary>
+        public bool insIntMovsPresupDet(SqlTransaction transac, string cia, Int64 id, DataRow doc,  int linea
+            , decimal montoLoc, decimal montoDol
+            , ref StringBuilder errores)
+        {
+
+            bool lbOK = true;
+            SqlCommand cmd = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("INSERT INTO ");
+                sentencia.Append(ciaPrin);
+                sentencia.Append(".INT_MOVS_PRESUP_DET ");
+                sentencia.Append("(CONJUNTO,ID,LINEA,CENTRO_COSTO,CUENTA_CONTABLE,DESCRIPCION,MONTOCOL,MONTODOL,NOTAS");
+                sentencia.Append(") VALUES (");
+                sentencia.Append("@CONJUNTO,@ID,@LINEA,@CENTRO_COSTO,@CUENTA_CONTABLE,@DESCRIPCION,@MONTOCOL,@MONTODOL,@NOTAS");
+                sentencia.Append(")");
+
+                //seteo el command
+                cmd = sqlClass.SQLCon.CreateCommand();
+                cmd.Transaction = transac;
+                cmd.CommandText = sentencia.ToString();
+
+                //seteo los parametros  
+                cmd.Parameters.Add("@CONJUNTO   ", SqlDbType.VarChar, 10).Value = cia;
+                cmd.Parameters.Add("@ID   ", SqlDbType.BigInt).Value = id;
+                cmd.Parameters.Add("@LINEA          ", SqlDbType.Int).Value = linea;
+                cmd.Parameters.Add("@CENTRO_COSTO   ", SqlDbType.VarChar, 25).Value = doc["CENTRO_COSTO"].ToString();
+                cmd.Parameters.Add("@CUENTA_CONTABLE", SqlDbType.VarChar, 25).Value = doc["CUENTA_CONTABLE"].ToString();
+                cmd.Parameters.Add("@DESCRIPCION    ", SqlDbType.VarChar, 500).Value = doc["LINEA_DESC"].ToString();
+                cmd.Parameters.Add("@NOTAS          ", SqlDbType.VarChar, 1000).Value = string.Empty;
+                cmd.Parameters.Add("@MONTOCOL   ", SqlDbType.Decimal).Value = montoLoc;
+                cmd.Parameters.Add("@MONTODOL   ", SqlDbType.Decimal).Value = montoDol;
+
+                if (cmd.ExecuteNonQuery() < 1)
+                {
+                    errores.AppendLine("[insIntMovsPresupDet]: Se presentaron problemas insertando INT_MOVS_PRESUP_DET: " + cia);
+                    lbOK = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[insIntMovsPresupDet]: Detalle Técnico: " + e.Message);
+                lbOK = false;
+            }
+            finally
+            {
+                cmd.Dispose();
+                cmd = null;
+            }
+            return (lbOK);
+        }
+
+        /// <summary>
+        /// Obtener la ULTIMA nomina por rango de fechas
+        /// </summary>
+        public Int64 getUltMovPresup(SqlTransaction transac)
+        {
+
+            StringBuilder sentencia = new StringBuilder();
+            Int64 ultValor = 0;
+
+            sentencia.Append("select ISNULL(MAX(ID)+1 ,1) ID from ");
+            sentencia.Append(ciaPrin);
+            sentencia.Append(".INT_MOVS_PRESUP ");
+
+            ultValor = Convert.ToInt64(sqlClass.EjecutarScalar(sentencia.ToString(), transac));
+
+            //dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+            return ultValor;
+        }
+
+
+        /// <summary>
+        /// Metodo que sincroniza las solicitudes de pago
+        /// </summary>
+        public bool syncPresupuestos(string url, string ck, string cs, string tipoPresup, ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            DataTable dtDocs = null;
+            StringBuilder json = new StringBuilder();
+            jsonHandler j = new jsonHandler();
+
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener encabezado
+                json.Append(j.getHeader(ck, cs, tipoPresupuesto(tipoPresup), "movimientopresupuestos"));
+
+                //abrir arreglo de docs
+                json.Append(j.getOpenArray());
+
+                dtDocs = getPresupSync(transaction, tipoPresup);
+
+                foreach (DataRow doc in dtDocs.Rows)
+                {
+                    //obtener doc
+                    json.Append(j.DataRowToJson(getPresupSync(transaction
+                                                                , doc["CONJUNTO"].ToString()
+                                                                , Convert.ToInt64(doc["ID"])
+                                                                , tipoPresup), 0, 1));
+                    //add lines
+                    json.Append(j.getLines());
+
+                    json.Append(j.DataTableToJson(getPresupLineasSync(transaction
+                                                                , doc["CONJUNTO"].ToString()
+                                                                , Convert.ToInt64(doc["ID"])
+                                                                , tipoPresup)));
+
+                    json.Append(j.getCloseLines());
+                }
+
+                //remover , del ultimo item
+                json.Remove(json.Length - 1, 1);
+
+                //cerrar array
+                json.Append(j.getCloseArray());
+
+                //obtener footer
+                json.Append(j.getFooter());
+
+                //existen documentos para enviar
+                if (dtDocs.Rows.Count > 0)
+                {
+                    //sync
+                    var client = new RestClient(url);
+                    var request = new RestRequest(Method.POST);
+                    request.AddParameter("application/json", json.ToString(), ParameterType.RequestBody);
+                    IRestResponse response = client.Execute(request);
+
+                    //revisar respuesta
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        //parsear la respuesta
+                        responseHandlerPresupuestos r = JsonConvert.DeserializeObject<responseHandlerPresupuestos>(response.Content);
+
+                        //revisar la respuesta existosa
+                        if (r.recordID.Count > 0)
+                        {
+                            int q = 0;
+                            while (q < r.recordID.Count)
+                            {
+                                ok = updIntMovsPresup(transaction
+                                    , "S"
+                                    , "Sincronizado"
+                                    , r.recordID[q].idmovimiento
+                                    , r.recordID[q].record
+                                    , ref error);
+
+                                if (!ok)
+                                    break;
+
+                                q++;
+                            }
+                        }
+
+                        //revisar la respuesta error
+                        if (r.Reason.Count > 0)
+                        {
+                            int q = 0;
+                            while (q < r.Reason.Count)
+                            {
+                                ok = updIntMovsPresup(transaction
+                                    , "E"
+                                    , r.recordID[q].idmovimiento
+                                    , r.Reason[q].error
+                                    , string.Empty
+                                    , ref error);
+
+                                if (!ok)
+                                    break;
+
+                                q++;
+
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        //No se pudo hacer el request, no hay catch y se intenta de nuevo.
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[syncPresupuestos]: Se presentaron problemas sincronizando:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+        /// <summary>
+        /// Actualizar 
+        /// </summary>
+        public bool updIntMovsPresup(SqlTransaction transac,  string indProc, string mensaje, string id, string idGen, ref StringBuilder errores)
+        {
+            bool lbOk = true;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("UPDATE ");
+                sentencia.Append(ciaPrin);
+                sentencia.Append(".INT_MOVS_PRESUP ");
+                sentencia.Append("SET IND_PROCESO = '" + indProc + "'");
+                sentencia.Append(", MENSAJE = '" + mensaje + "'");
+                sentencia.Append(", IDQB = '" + idGen + "'");
+                sentencia.Append(" WHERE ID = " + id + " ");
+             
+
+                if (sqlClass.EjecutarUpdate(sentencia.ToString(), transac) < 1)
+                {
+                    errores.AppendLine("[updIntMovsPresup]: Se presentaron problemas actualizando el doc en la tabla intermedia: ");
+                    errores.Append(id);
+                    lbOk = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[updIntMovsPresup]: Detalle Técnico: " + e.Message);
+                lbOk = false;
+            }
+            return lbOk;
+        }
+
+
+        /// <summary>
+        /// Actualizar 
+        /// </summary>
+        public bool updIntMovsPresupMontos(SqlTransaction transac, string cia, Int64 id, decimal montoLoc, decimal montoDol, decimal tc, ref StringBuilder errores)
+        {
+            bool lbOk = true;
+            StringBuilder sentencia = new StringBuilder();
+
+            try
+            {
+                sentencia.Append("UPDATE ");
+                sentencia.Append(ciaPrin);
+                sentencia.Append(".INT_MOVS_PRESUP ");
+                sentencia.Append("SET MONTO = " + montoLoc + " ");
+                sentencia.Append(", MONTOCOL = " + montoLoc + " ");
+                sentencia.Append(", MONTODOL = " + montoDol + " ");
+                sentencia.Append(", TIPOCAMBIO = " + tc + " ");
+                
+                sentencia.Append(" WHERE ID = " + id + " ");
+                sentencia.Append(" AND CONJUNTO = '" + cia + "' ");
+
+
+                if (sqlClass.EjecutarUpdate(sentencia.ToString(), transac) < 1)
+                {
+                    errores.AppendLine("[updIntMovsPresup]: Se presentaron problemas actualizando el doc en la tabla intermedia: ");
+                    errores.Append(id);
+                    lbOk = false;
+                }
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[updIntMovsPresup]: Detalle Técnico: " + e.Message);
+                lbOk = false;
+            }
+            return lbOk;
+        }
+
+
+        #endregion NOMINA
+
+
+        #region VALES
+
+        /// <summary>
+        /// Metodo que extrae los vales de CH
+        /// </summary>
+        public bool extractVales(DateTime fInicio, DateTime fFin, ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;            
+            DataTable dtCia, dtDocs, dtTotal = null;
+            int linea = 0;
+            Int64 id = 0;
+
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener el ultimo ID
+                id = getUltMovPresup(transaction);
+
+                //obtener cias en el andamio
+                dtCia = getCias(transaction);
+                string cia = string.Empty;
+
+                foreach (DataRow drCia in dtCia.Rows)
+                {
+                    cia = drCia["CONJUNTO"].ToString();
+
+                    if(existVales(transaction, cia, fInicio, fFin)>0)
+                    {                     
+                        //obtener totales de los vales
+                        dtTotal = getValesTotal(transaction, cia, fInicio, fFin);
+
+                        if (dtTotal.Rows.Count > 0)
+                        {
+                            foreach (DataRow dr in dtTotal.Rows)
+                            {
+                                //inserto en el andamio
+                                ok = insIntMovsPresup(transaction, cia, id, dr, "C", "CH"
+                                    , "Caja Chica " + cia + " | " + dr["MES"].ToString() + "-" + dr["ANNO"].ToString()
+                                    , ref error);
+
+                                if (!ok)
+                                    break;
+                            }
+
+                            if (ok)
+                            {
+                                //linea de detalle
+                                linea = 1;
+
+                                //Obtener la nomina detallada
+                                dtDocs = getValesDetallado(transaction, cia, fInicio, fFin);
+
+                                if (dtDocs.Rows.Count > 0)
+                                {
+                                    foreach (DataRow drDoc in dtDocs.Rows)
+                                    {
+                                        //inserto en el andamio
+                                        ok = insIntMovsPresupDet(transaction, cia, id, drDoc, linea, ref error);
+
+                                        linea++;
+
+                                        if (!ok)
+                                            break;
+                                    }
+                                }
+                            }
+
+                            //sgt documento
+                            id++;
+                        }
+                    }                    
+
+                    if (!ok)
+                        break;
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[extractNomina]: Se presentaron problemas extrayendo nomina:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+
+        /// <summary>
+        /// Obtener las vales total
+        /// </summary>
+        public int existVales(SqlTransaction transac, string cia, DateTime fInicio, DateTime fFin)
+        {
+            int q; 
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select COUNT(ISNULL(v.VALE,0))  ");
+            sentencia.Append(" from ");
+            sentencia.Append(cia);
+            sentencia.Append(".VALE v inner join  ");
+            sentencia.Append(cia);
+            sentencia.Append(".CONCEPTO_VALE cv on v.CONCEPTO_VALE = cv.CONCEPTO_VALE ");
+            sentencia.Append("where v.ESTADO = 'R' ");
+            sentencia.Append(" and v.FECHA_EMISION >= '" + fInicio.ToString("yyyy-MM-dd") + "'");
+            sentencia.Append(" and v.FECHA_EMISION <= '" + fFin.ToString("yyyy-MM-dd") + "'");
+
+            q = int.Parse(sqlClass.EjecutarScalar(sentencia.ToString(), transac).ToString()); ;
+
+            return q;
+        }
+
+
+        /// <summary>
+        /// Obtener las vales total
+        /// </summary>
+        public DataTable getValesTotal(SqlTransaction transac,  string cia, DateTime fInicio, DateTime fFin)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select MAX(v.FECHA_EMISION) FECHA ");
+            sentencia.Append(", DATEPART(MONTH, MAX(v.FECHA_EMISION)) MES ");
+            sentencia.Append(", DATEPART(YEAR, MAX(v.FECHA_EMISION)) ANNO  ");
+            sentencia.Append(", SUM(v.MONTO_LOCAL) MONTO_LOCAL ");
+            sentencia.Append(", SUM(v.MONTO_DOLAR) MONTO_DOLAR ");
+            sentencia.Append(", AVG(v.TIPO_CAMB_DOLAR) TIPO_CAMBIO ");
+            sentencia.Append(" from ");
+            sentencia.Append(cia);
+            sentencia.Append(".VALE v inner join  ");
+            sentencia.Append(cia);
+            sentencia.Append(".CONCEPTO_VALE cv on v.CONCEPTO_VALE = cv.CONCEPTO_VALE ");
+            sentencia.Append("where v.ESTADO = 'R' ");                       
+            sentencia.Append(" and v.FECHA_EMISION >= '" + fInicio.ToString("yyyy-MM-dd") + "'");
+            sentencia.Append(" and v.FECHA_EMISION <= '" + fFin.ToString("yyyy-MM-dd") + "'");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// Obtener las vales detallado
+        /// </summary>
+        public DataTable getValesDetallado(SqlTransaction transac, string cia, DateTime fInicio, DateTime fFin)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select ");
+            sentencia.Append(" v.CONSECUTIVO ");
+            sentencia.Append(",v.CAJA_CHICA ");
+            sentencia.Append(",v.VALE ");
+            sentencia.Append(",v.FECHA_EMISION ");
+            sentencia.Append(",v.CONCEPTO_VALE ");
+            sentencia.Append(",v.MONTO_LOCAL ");
+            sentencia.Append(",v.MONTO_DOLAR ");
+            sentencia.Append(",v.TIPO_CAMB_DOLAR TIPO_CAMBIO ");
+            sentencia.Append(",cv.CENTRO_COSTO ");
+            sentencia.Append(",cv.CUENTA_CONTABLE ");
+            sentencia.Append(",v.VALE + ' - ' + v.CAJA_CHICA + ' - ' + cv.DESCRIPCION + ' - ' + convert(varchar(1000), v.NOTAS) LINEA_DESC ");
+            sentencia.Append(",cv.DESCRIPCION ");
+            sentencia.Append(" from ");
+            sentencia.Append(cia);
+            sentencia.Append(".VALE v inner join  ");
+            sentencia.Append(cia);
+            sentencia.Append(".CONCEPTO_VALE cv on v.CONCEPTO_VALE = cv.CONCEPTO_VALE ");
+            sentencia.Append("where v.ESTADO = 'R' ");
+            sentencia.Append(" and v.FECHA_EMISION >= '" + fInicio.ToString("yyyy-MM-dd") + "'");
+            sentencia.Append(" and v.FECHA_EMISION <= '" + fFin.ToString("yyyy-MM-dd") + "'");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        #endregion VALES
+
+
+        #region SALDOS
+
+        /// <summary>
+        /// Metodo que extrae los saldos
+        /// </summary>
+        public bool extractSaldos(DateTime fInicio, DateTime fFin, ref StringBuilder error)
+        {
+            SqlTransaction transaction = null;
+            bool ok = true;
+            DataTable dtCia, dtTotal = null;
+            int linea = 0;
+            Int64 id = 0;
+            decimal montoCol, montoDol;
+            decimal AcumMontoCol=0, AcumMontoDol=0;
+
+            try
+            {
+                //inicio transaction
+                transaction = sqlClass.SQLCon.BeginTransaction();
+
+                //obtener el ultimo ID
+                id = getUltMovPresup(transaction);
+
+                //obtener cias en el andamio
+                dtCia = getCias(transaction);
+                string cia = string.Empty;
+
+                foreach (DataRow drCia in dtCia.Rows)
+                {
+                    cia = drCia["CONJUNTO"].ToString();
+                    
+                    //obtener cuentas contables a procesar segun el UDF
+                    dtTotal = getCuentasContables(transaction, cia);
+
+                    if (dtTotal.Rows.Count > 0)
+                    {
+                        //inserto en el andamio para la compania
+                        ok = insIntMovsPresup(transaction, cia, id, "S", "SAL"
+                            , "Saldos " + cia + " del " + fInicio.ToString("MM-yyyy") + " al " + fFin.ToString("MM-yyyy") 
+                            , fFin
+                            , 0
+                            , 0
+                            , 0
+                            , ref error);
+
+                        //linea de detalle
+                        linea = 1;
+
+                        foreach (DataRow dr in dtTotal.Rows)
+                        {
+                            //obtener el saldo de la cuenta con proc
+                            montoCol = getCuentaSaldo(transaction, cia, dr, fInicio, fFin, 1, "L", ref error);
+                            montoDol = getCuentaSaldo(transaction, cia, dr, fInicio, fFin, 1, "D", ref error);
+
+                            if((montoCol>0) && (montoDol>0))
+                            {
+                                //inserto en el andamio
+                                ok = insIntMovsPresupDet(transaction, cia, id, dr, linea, montoCol, montoDol, ref error);
+                                
+                                if (!ok)
+                                    break;
+                                else
+                                {
+                                    AcumMontoCol += montoCol;
+                                    AcumMontoDol += montoDol;
+                                    linea++;
+                                }
+                            }
+                        }
+
+                        if(ok)
+                        {
+                            //actualizado totales del encabezado del presupuesto
+
+                            ok = updIntMovsPresupMontos(transaction, cia, id, AcumMontoCol, AcumMontoDol
+                                , (AcumMontoCol / AcumMontoDol), ref error);
+
+                            AcumMontoCol = 0;
+                            AcumMontoDol = 0;
+
+                        }
+
+                        //sgt documento
+                        id++;
+                    }
+                    
+
+                    if (!ok)
+                        break;
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+                error.AppendLine("[extractSaldos]: Se presentaron problemas extrayendo saldos:");
+                error.AppendLine(ex.Message);
+                ok = false;
+            }
+
+            finally
+            {
+                if (sqlClass != null)
+                {
+                    if (ok)
+                        transaction.Commit();
+                    else
+                        transaction.Rollback();
+                }
+            }
+
+            return ok;
+        }
+
+
+        /// <summary>
+        /// Obtener las vales total
+        /// </summary>
+        public DataTable getCuentasContables(SqlTransaction transac, string cia)
+        {
+            DataTable dt = null;
+            StringBuilder sentencia = new StringBuilder();
+
+            sentencia.Append("select CUENTA_CONTABLE ");
+            sentencia.Append(",DESCRIPCION ");
+            sentencia.Append(",TIPO ");
+            sentencia.Append(",TIPO_DETALLADO ");
+            sentencia.Append(",ACEPTA_DATOS ");
+            sentencia.Append(",USA_CENTRO_COSTO ");
+            sentencia.Append(",'SAL' DOCUMENTO ");
+            sentencia.Append(",'SALDO: ' + CUENTA_CONTABLE + ' ' + DESCRIPCION  LINEA_DESC ");
+            sentencia.Append(",'00-000-000-00' CENTRO_COSTO ");
+
+
+
+            sentencia.Append(" from ");
+            sentencia.Append(cia);
+            sentencia.Append(".CUENTA_CONTABLE  ");            
+            sentencia.Append("where U_USA_CC_OPERATIVO = 'S' ");
+            sentencia.Append("and ACEPTA_DATOS = 'S' ");
+            sentencia.Append("and USA_CENTRO_COSTO = 'S' ");
+
+            dt = sqlClass.EjecutarConsultaDS(sentencia.ToString(), transac);
+
+            return dt;
+        }
+
+
+        /// <summary>
+        /// Metodo encargado de insertar movs de presupuesto
+        /// </summary>
+        public decimal getCuentaSaldo(SqlTransaction transac, string cia, DataRow doc,
+            DateTime fecha, DateTime fechaFinal, int opc, string moneda, ref StringBuilder errores)
+        {
+            
+            SqlCommand cmd = null;
+            StringBuilder sentencia = new StringBuilder();
+            decimal val=0;
+            SqlDataAdapter adapter = new SqlDataAdapter();
+            DataTable dt = new DataTable();
+
+            try
+            {                
+                sentencia.Append(cia);
+                sentencia.Append(".GETMONTOS ");               
+
+                //seteo el command
+                cmd = sqlClass.SQLCon.CreateCommand();
+                cmd.Transaction = transac;
+                cmd.CommandText = sentencia.ToString();
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                //seteo los parametros  
+                cmd.Parameters.Add("@FECHA", SqlDbType.DateTime).Value = fecha.ToString("yyyy-MM-dd");
+                cmd.Parameters.Add("@FECHAFINAL", SqlDbType.DateTime).Value = fechaFinal.ToString("yyyy-MM-dd");
+                cmd.Parameters.AddWithValue("@SWHERE          ", " AND (CUENTA_CONTABLE = '" + doc["CUENTA_CONTABLE"] + "') ");
+                cmd.Parameters.AddWithValue("@SWHEREFASE      ", " AND (CUENTA_CONTABLE = '" + doc["CUENTA_CONTABLE"] + "') ");
+                cmd.Parameters.AddWithValue("@TIPOCONTABILIDAD", "C");
+                cmd.Parameters.AddWithValue("@ANTESCIERRE     ", "N");
+                cmd.Parameters.AddWithValue("@MONEDA          ", moneda);
+                cmd.Parameters.AddWithValue("@OPCION          ", opc);
+                cmd.Parameters.AddWithValue("@MOVIMIENTO      ", "M");
+
+                adapter = new SqlDataAdapter(cmd);
+
+                cmd.ExecuteNonQuery();
+
+                adapter.Fill(dt);
+
+                if (dt.Rows.Count > 0)
+                {
+                    val = Convert.ToDecimal(dt.Rows[0][0]);
+                }
+                else
+                    val = 0;
+                
+                
+            }
+            catch (Exception e)
+            {
+                errores.AppendLine("[insIntMovsPresup]: Detalle Técnico: " + e.Message);                
+                val = 0;
+            }
+            finally
+            {
+                adapter.Dispose();
+                cmd.Dispose();
+                cmd = null;
+            }
+            return (val);
+        }
+
+
+        #endregion SALDOS
 
 
 

@@ -29,11 +29,14 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmVisor));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.btnProceso = new System.Windows.Forms.ToolStripButton();
+            this.btnAsientos = new System.Windows.Forms.ToolStripButton();
+            this.btnPresup = new System.Windows.Forms.ToolStripButton();
+            this.btnGeneraJsons = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.btnFiltrar = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
@@ -42,6 +45,7 @@
             this.btnActualizar = new System.Windows.Forms.ToolStripButton();
             this.btnSalir = new System.Windows.Forms.ToolStripButton();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.txtJsons = new System.Windows.Forms.RichTextBox();
             this.cbTipo = new System.Windows.Forms.ComboBox();
             this.cbEstado = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -52,8 +56,6 @@
             this.stMsg = new System.Windows.Forms.StatusStrip();
             this.lbMensaje = new System.Windows.Forms.ToolStripStatusLabel();
             this.dg = new System.Windows.Forms.DataGridView();
-            this.txtJsons = new System.Windows.Forms.RichTextBox();
-            this.btnGeneraJsons = new System.Windows.Forms.ToolStripButton();
             this.toolStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.stMsg.SuspendLayout();
@@ -64,6 +66,8 @@
             // 
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnProceso,
+            this.btnAsientos,
+            this.btnPresup,
             this.btnGeneraJsons,
             this.toolStripSeparator4,
             this.btnFiltrar,
@@ -88,6 +92,37 @@
             this.btnProceso.Size = new System.Drawing.Size(23, 22);
             this.btnProceso.Text = "Ejecutar proceso de integración ";
             this.btnProceso.Click += new System.EventHandler(this.btnProceso_Click);
+            // 
+            // btnAsientos
+            // 
+            this.btnAsientos.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnAsientos.Image = ((System.Drawing.Image)(resources.GetObject("btnAsientos.Image")));
+            this.btnAsientos.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnAsientos.Name = "btnAsientos";
+            this.btnAsientos.Size = new System.Drawing.Size(23, 22);
+            this.btnAsientos.Text = "Ejecutar proceso de ajuste de asientos";
+            this.btnAsientos.Click += new System.EventHandler(this.btnAsientos_Click);
+            // 
+            // btnPresup
+            // 
+            this.btnPresup.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnPresup.Image = ((System.Drawing.Image)(resources.GetObject("btnPresup.Image")));
+            this.btnPresup.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnPresup.Name = "btnPresup";
+            this.btnPresup.Size = new System.Drawing.Size(23, 22);
+            this.btnPresup.Text = "Ejecutar sincronización de presupuesto y facturas";
+            this.btnPresup.Click += new System.EventHandler(this.btnPresup_Click);
+            // 
+            // btnGeneraJsons
+            // 
+            this.btnGeneraJsons.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnGeneraJsons.Image = ((System.Drawing.Image)(resources.GetObject("btnGeneraJsons.Image")));
+            this.btnGeneraJsons.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnGeneraJsons.Name = "btnGeneraJsons";
+            this.btnGeneraJsons.Size = new System.Drawing.Size(23, 22);
+            this.btnGeneraJsons.Text = "Genera JSONs";
+            this.btnGeneraJsons.Visible = false;
+            this.btnGeneraJsons.Click += new System.EventHandler(this.btnGeneraJsons_Click);
             // 
             // toolStripSeparator4
             // 
@@ -159,6 +194,15 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(964, 102);
             this.panel1.TabIndex = 22;
+            // 
+            // txtJsons
+            // 
+            this.txtJsons.Location = new System.Drawing.Point(348, 6);
+            this.txtJsons.Name = "txtJsons";
+            this.txtJsons.Size = new System.Drawing.Size(527, 90);
+            this.txtJsons.TabIndex = 111;
+            this.txtJsons.Text = "";
+            this.txtJsons.Visible = false;
             // 
             // cbTipo
             // 
@@ -258,59 +302,39 @@
             // 
             this.dg.AllowUserToAddRows = false;
             this.dg.AllowUserToDeleteRows = false;
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dg.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dg.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             this.dg.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle5.BackColor = System.Drawing.SystemColors.Window;
-            dataGridViewCellStyle5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle5.ForeColor = System.Drawing.SystemColors.ControlText;
-            dataGridViewCellStyle5.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle5.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dg.DefaultCellStyle = dataGridViewCellStyle5;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dg.DefaultCellStyle = dataGridViewCellStyle2;
             this.dg.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dg.Location = new System.Drawing.Point(0, 127);
             this.dg.Name = "dg";
             this.dg.ReadOnly = true;
-            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle6.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dg.RowHeadersDefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dg.RowHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.dg.RowHeadersWidth = 40;
             this.dg.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dg.Size = new System.Drawing.Size(964, 353);
             this.dg.TabIndex = 25;
-            // 
-            // txtJsons
-            // 
-            this.txtJsons.Location = new System.Drawing.Point(348, 6);
-            this.txtJsons.Name = "txtJsons";
-            this.txtJsons.Size = new System.Drawing.Size(527, 90);
-            this.txtJsons.TabIndex = 111;
-            this.txtJsons.Text = "";
-            this.txtJsons.Visible = false;
-            // 
-            // btnGeneraJsons
-            // 
-            this.btnGeneraJsons.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnGeneraJsons.Image = ((System.Drawing.Image)(resources.GetObject("btnGeneraJsons.Image")));
-            this.btnGeneraJsons.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btnGeneraJsons.Name = "btnGeneraJsons";
-            this.btnGeneraJsons.Size = new System.Drawing.Size(23, 22);
-            this.btnGeneraJsons.Text = "Genera JSONs";
-            this.btnGeneraJsons.Visible = false;
-            this.btnGeneraJsons.Click += new System.EventHandler(this.btnGeneraJsons_Click);
             // 
             // frmVisor
             // 
@@ -362,6 +386,8 @@
         private System.Windows.Forms.DataGridView dg;
         private System.Windows.Forms.ToolStripButton btnGeneraJsons;
         private System.Windows.Forms.RichTextBox txtJsons;
+        private System.Windows.Forms.ToolStripButton btnAsientos;
+        private System.Windows.Forms.ToolStripButton btnPresup;
     }
 }
 

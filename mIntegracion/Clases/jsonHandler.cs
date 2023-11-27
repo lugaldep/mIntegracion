@@ -71,6 +71,23 @@ namespace mIntegracion.Clases
         /// <summary>
         /// Metodo obtener el encabezado del json 
         /// </summary>
+        public string getHeader(string ck, string cs, string type, string typeDoc)
+        {
+            //string json = "{\"conexion\": {\"consumer_key\": \"cd8bcsgff8wccbjv9ue9c46dakc\",\"consumer_secret\": \"bz9ry3_cv58_0_b72tsyzdwe2gj7dfvr8bdctx6q4f\",\"type\":\"compania\",\"compania\": 	{		\"nombre\": \"Bahia San Felipe, S.A.\",	\"telefono\": \"22880101\",		\"nit\": \"3101371510\",		\"codigo\": \"BSF\",		\"imagnombre\": \"Logo_BSF.BMP\"	}}}";
+            StringBuilder sent = new StringBuilder();
+
+            sent.Append("{\"conexion\": {");
+            sent.Append("\"consumer_key\": \"" + ck + "\", ");
+            sent.Append("\"consumer_secret\": \"" + cs + "\",");
+            sent.Append("\"type\":\"" + type + "\",\"" + typeDoc + "\": ");
+            return (sent.ToString());
+
+        }
+
+
+        /// <summary>
+        /// Metodo obtener el encabezado del json 
+        /// </summary>
         public string getFooter()
         {            
             return ("}}");

@@ -50,9 +50,9 @@ namespace mIntegracion
             try
             {
                 DataTable dt = prc.getIntGlobales();
-                ck = dt.Rows[0]["CONSUMER_KEY"].ToString();
-                cs = dt.Rows[0]["CONSUMER_SECRET"].ToString();
-                url = dt.Rows[0]["SERVICE"].ToString();
+                ck = dt.Rows[0]["CONSUMER_KEY_OPE"].ToString();
+                cs = dt.Rows[0]["CONSUMER_SECRET_OPE"].ToString();
+                url = dt.Rows[0]["SERVICE_OPE"].ToString();
 
             }
             catch (Exception ex)
@@ -158,7 +158,23 @@ namespace mIntegracion
                 else
                     gOk = false;
 
+                lbOk = prc.extractPagosOC(ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de pagos (descuentos) finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
 
+                lbOk = prc.extractPagosAnulados(ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de pagos (anulación) finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+                //conversion N/C acorde al ERP para la integracion
                 lbOk = prc.extractNotasCredito(ref Errores);
                 if (lbOk)
                 {
@@ -231,6 +247,133 @@ namespace mIntegracion
                 if (gOk)
                 {
                     MessageBox.Show("El proceso de sincronización finalizó correctamente. " , "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+
+                if (!gOk)
+                    MessageBox.Show("Ocurrieron errores: " + Errores.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            }
+            catch (Exception Ex)
+            {
+                MessageBox.Show("Ocurrieron errores: " + Ex.Message.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            }
+        }
+
+
+        private void correrActualizaAsientos()
+        {
+            bool lbOk = true;
+            bool gOk = true;
+
+            try
+            {
+                lbOk = prc.actualizaOCAsientos(ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de actualizacion de asientos de CO finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+                lbOk = prc.actualizaCPAsientos(ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de actualizacion de asientos de CP finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+                if (gOk)
+                {
+                    MessageBox.Show("El proceso de actualización finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+
+                if (!gOk)
+                    MessageBox.Show("Ocurrieron errores: " + Errores.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            }
+            catch (Exception Ex)
+            {
+                MessageBox.Show("Ocurrieron errores: " + Ex.Message.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            }
+        }
+
+
+
+
+        private void correrExtraccionPresupFact(DateTime fi, DateTime ff)
+        {
+            bool lbOk = true;
+            bool gOk = true;
+
+            try
+            {
+                lbOk = prc.extractFacturas(fi, ff, ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de facturas emitidas finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+                lbOk = prc.extractFacturasPagadas(fi, ff, ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de facturas cobradas finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+                //Nomina QUINCENAL
+                lbOk = prc.extractNomina(fi, ff, ConfigurationManager.AppSettings["NominaQuincenal"].ToString(), ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de nómina finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+                //Nomina AGUINALDOS
+                lbOk = prc.extractNomina(fi, ff, ConfigurationManager.AppSettings["NominaAguinaldos"].ToString(), ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de nómina finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+                //Caja Chica
+                lbOk = prc.extractVales(fi, ff, ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de vales de caja chica finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+                //Saldos
+                lbOk = prc.extractSaldos(fi, ff, ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de extracción de saldos de cuentas contables finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+
+
+
+                if (gOk)
+                {
+                    MessageBox.Show("El proceso de extracción finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
                 if (!gOk)
@@ -344,6 +487,85 @@ namespace mIntegracion
             catch (Exception ex)
             {   
                 txtJsons.Text = ex.Message.ToString();
+            }
+        }
+
+        private void btnAsientos_Click(object sender, EventArgs e)
+        {
+            correrActualizaAsientos();
+        }
+
+        private void btnPresup_Click(object sender, EventArgs e)
+        {
+
+            frmFechas fchs = new frmFechas();
+            fchs.ShowDialog();
+
+            correrExtraccionPresupFact(fchs.fi, fchs.ff);
+            
+            correrSyncPresupFact();
+
+
+        }
+
+        private void correrSyncPresupFact()
+        {
+            bool lbOk = true;
+            bool gOk = true;
+
+            try
+            {
+                lbOk = prc.syncFacturasOpe(url, ck, cs, ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de sincronización de facturas finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+                //Sincronizar prespuestos de NOMINA
+                lbOk = prc.syncPresupuestos(url, ck, cs, "N", ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de sincronización de nómina finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+                //Sincronizar prespuestos de CAJA CHICA
+                lbOk = prc.syncPresupuestos(url, ck, cs, "C", ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de sincronización de vales de caja chica finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+                //Sincronizar prespuestos de SALDOS
+                lbOk = prc.syncPresupuestos(url, ck, cs, "S", ref Errores);
+                if (lbOk)
+                {
+                    MessageBox.Show("El proceso de sincronización de saldos finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    gOk = false;
+
+
+                if (gOk)
+                {
+                    MessageBox.Show("El proceso de sincronización finalizó correctamente. ", "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+
+                if (!gOk)
+                    MessageBox.Show("Ocurrieron errores: " + Errores.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            }
+            catch (Exception Ex)
+            {
+                MessageBox.Show("Ocurrieron errores: " + Ex.Message.ToString(), "Módulo de Integración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
             }
         }
 

@@ -43,14 +43,21 @@ namespace mIntegracion
             //args[4] = "PRINCIPAL";
             //args[5] = "0";
 
+            //args[0] = "erpadmin";
+            //args[1] = "PlazaBratsi1";
+            //args[2] = "PORTAFOLIO";
+            //args[3] = @"172.30.1.65";
+            //args[4] = "PRINCIPAL";
+            //args[5] = "0";
 
 
             args[0] = "erpadmin";
             args[1] = "PlazaBratsi1";
-            args[2] = "PORTAFOLIO";
-            args[3] = @"172.30.1.65";
+            args[2] = "PRUEBAS";
+            args[3] = @"172.30.1.65\DESARROLLO,14334";
             args[4] = "PRINCIPAL";
             args[5] = "0";
+
 
 #endif
             //$U$P$B$S$C
@@ -63,6 +70,16 @@ namespace mIntegracion
                 server = args[3];
                 cia = args[4];                
                 ejec = args[5];
+
+
+                if (ConfigurationManager.AppSettings["ModoPruebas"].ToString().CompareTo("S") == 0)
+                {
+                    user = ConfigurationManager.AppSettings["Usuario"].ToString();
+                    pass = ConfigurationManager.AppSettings["Contrasena"].ToString();
+                    dataBase = ConfigurationManager.AppSettings["BaseDatos"].ToString();
+                    server = ConfigurationManager.AppSettings["Servidor"].ToString();
+                    cia = ConfigurationManager.AppSettings["CiaPrincipal"].ToString();
+                }
 
                 //se realiza una conexión de prueba
                 if (okFlag)
@@ -119,6 +136,8 @@ namespace mIntegracion
                             prc.extractAnticipos(ref Errores);
                             prc.extractSolicitudPagos(ref Errores);
                             prc.extractPagos(ref Errores);
+                            prc.extractPagosOC(ref Errores);
+                            prc.extractPagosAnulados(ref Errores);
                             prc.extractNotasCredito(ref Errores);
                             //cias
                             prc.syncCompanias(url, ck, cs, ref Errores);
@@ -128,6 +147,11 @@ namespace mIntegracion
                             prc.syncSolicitudesPago(url, ck, cs, ref Errores);
                             //pagos
                             prc.syncPagos(url, ck, cs, ref Errores);
+
+                            //asientos
+                            prc.actualizaOCAsientos(ref Errores);
+                            prc.actualizaCPAsientos(ref Errores);
+
                         }
                     }
                     catch (Exception ex)
